@@ -1,3 +1,33 @@
 spring:
+  mvc:
+    problemdetails:
+      enabled: false
   application:
     name: transactions
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:5433/transactions_db
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: supino2604
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+      httpclient:
+        hc5:
+          enabled: true
+server:
+  port: 8083
+resilience4j:
+  circuitbreaker:
+    instances:
+      account-service:
+        sliding-window-size: 10  # avalia as últimas 10 chamadas
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50        # abre o circuito se 50% falharem
+        wait-duration-in-open-state: 30s  # fica bloqueado por 30s
+        permitted-number-of-calls-in-half-open-state: 3

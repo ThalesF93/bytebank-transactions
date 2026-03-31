@@ -1,7 +1,7 @@
 package br.com.bytebank.transactions.entities;
 
 
-import br.com.coderbank.operacoes_bancarias.enums.OperationType;
+import br.com.bytebank.transactions.enums.OperationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +24,11 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "account_id")
-    private Account account;
-    // mudar para id de saida e entrada
+    @Column(nullable = false)
+    private UUID originAccountId;
+
+    @Column
+    private UUID targetAccountId;
 
     @Enumerated(EnumType.STRING)
     @Column
@@ -40,22 +41,9 @@ public class Transaction {
     @Column
     private LocalDateTime dateTime;
 
-
     @Column
     private String description;
 
-
-    public Transaction(OperationType type, BigDecimal amount, String description) {
-        this.type = type;
-        this.amount = amount;
-        this.description = description;
-    }
-
-
-    public Transaction(OperationType type, BigDecimal amount) {
-        this.type = type;
-        this.amount = amount;
-    }
 
     @Override
     public boolean equals(Object o) {
