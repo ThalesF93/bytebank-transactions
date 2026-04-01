@@ -5,9 +5,11 @@ import br.com.bytebank.transactions.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.entities.Transaction;
 import br.com.bytebank.transactions.enums.OperationType;
+import br.com.bytebank.transactions.enums.TransactionStatus;
 import br.com.bytebank.transactions.exceptions.InvalidAmountException;
 import br.com.bytebank.transactions.openfeign.feignclients.AccountClient;
 import br.com.bytebank.transactions.repositories.TransactionRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,15 +33,21 @@ public class TransactionService {
         amountValidation(requestDTO.amount());
 
 
-        accountClient.debit(new WithdrawRequestDTO(requestDTO.accountId(), requestDTO.amount()));
+        Transaction transaction = null;
+        try {
+            accountClient.debit(new WithdrawRequestDTO(requestDTO.accountId(), requestDTO.amount()));
 
-        Transaction transaction = new Transaction();
-        transaction.setOriginAccountId(requestDTO.accountId());
-        transaction.setType(OperationType.WITHDRAW);
-        transaction.setAmount(requestDTO.amount());
-        transaction.setDateTime(LocalDateTime.now());
+            transaction = new Transaction();
+            transaction.setOriginAccountId(requestDTO.accountId());
+            transaction.setType(OperationType.WITHDRAW);
+            transaction.setAmount(requestDTO.amount());
+            transaction.setDateTime(LocalDateTime.now());
+            transaction.setStatus(TransactionStatus.COMPLETED);
 
-        transactionRepository.save(transaction);
+            transactionRepository.save(transaction);
+        } catch (FeignException e) {
+            throw new RuntimeException(e);
+        }
         log.info("Withdraw succeeded. accountId={}, value={}", requestDTO.accountId(), requestDTO.amount());
 
         return new TransactionResponseDTO(

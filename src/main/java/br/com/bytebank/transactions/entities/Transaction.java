@@ -2,6 +2,7 @@ package br.com.bytebank.transactions.entities;
 
 
 import br.com.bytebank.transactions.enums.OperationType;
+import br.com.bytebank.transactions.enums.TransactionStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,10 @@ public class Transaction {
     @Column
     private OperationType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column
+    private TransactionStatus status;
+
     @Column(nullable = false)
     private BigDecimal amount;
 
@@ -44,6 +49,11 @@ public class Transaction {
     @Column
     private String description;
 
+    @PrePersist
+    private void prePersist() {
+        this.dateTime = LocalDateTime.now();
+        this.status = TransactionStatus.PENDING;
+    }
 
     @Override
     public boolean equals(Object o) {
