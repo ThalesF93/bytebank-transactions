@@ -1,10 +1,10 @@
 //package br.com.bytebank.transactions.openfeign.scheduler;
 //
 //
-//import br.com.bytebank.customers.entities.PendingAccountOpening;
-//import br.com.bytebank.customers.exceptions.AccountNotCreatedException;
+//import br.com.bytebank.customers.entity.PendingAccountOpening;
+//import br.com.bytebank.customers.exception.AccountNotCreatedException;
 //import br.com.bytebank.customers.openfeign.dtos.requests.AccountRequestDTO;
-//import br.com.bytebank.customers.openfeign.feignclients.AccountClient;
+//import br.com.bytebank.customers.openfeign.feignclient.AccountClient;
 //import br.com.bytebank.customers.repositories.PendingAccountRepository;
 //import org.springframework.beans.factory.annotation.Autowired;
 //import org.springframework.scheduling.annotation.Scheduled;

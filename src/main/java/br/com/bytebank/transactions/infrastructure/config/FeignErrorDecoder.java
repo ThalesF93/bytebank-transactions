@@ -1,7 +1,7 @@
 package br.com.bytebank.transactions.infrastructure.config;
 
 
-import br.com.bytebank.transactions.domain.exceptions.ResourceNotFoundException;
+import br.com.bytebank.transactions.domain.exception.ResourceNotFoundException;
 import feign.FeignException;
 import feign.Response;
 import feign.codec.ErrorDecoder;

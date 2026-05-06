@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.domain.entities;
+package br.com.bytebank.transactions.domain.entity;
 
 
 import br.com.bytebank.transactions.domain.enums.OperationType;

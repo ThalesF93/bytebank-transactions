@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.api.controllers;
+package br.com.bytebank.transactions.api.controller;
 
 
 import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;

@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.domain.exceptions;
+package br.com.bytebank.transactions.domain.exception;
 
 public class InsufficientBalanceException extends RuntimeException {
     public InsufficientBalanceException(String message) {

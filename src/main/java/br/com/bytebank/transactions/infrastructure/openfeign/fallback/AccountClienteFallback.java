@@ -1,9 +1,9 @@
 //package br.com.bytebank.transactions.openfeign.fallback;
 //
 //
-//import br.com.bytebank.customers.entities.PendingAccountOpening;
+//import br.com.bytebank.customers.entity.PendingAccountOpening;
 //import br.com.bytebank.customers.openfeign.dtos.requests.AccountRequestDTO;
-//import br.com.bytebank.customers.openfeign.feignclients.AccountClient;
+//import br.com.bytebank.customers.openfeign.feignclient.AccountClient;
 //import br.com.bytebank.customers.repositories.PendingAccountRepository;
 //import lombok.RequiredArgsConstructor;
 //import org.springframework.http.ResponseEntity;

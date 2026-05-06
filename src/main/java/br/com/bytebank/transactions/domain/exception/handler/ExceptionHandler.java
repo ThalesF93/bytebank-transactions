@@ -1,5 +1,5 @@
-package br.com.bytebank.transactions.domain.exceptions.handler;
-import br.com.bytebank.transactions.domain.exceptions.InsufficientBalanceException;
+package br.com.bytebank.transactions.domain.exception.handler;
+import br.com.bytebank.transactions.domain.exception.InsufficientBalanceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;

@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.infrastructure.feignclients;
+package br.com.bytebank.transactions.infrastructure.feignclient;
 
 import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.WithdrawRequestDTO;

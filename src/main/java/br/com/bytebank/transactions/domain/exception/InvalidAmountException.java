@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.domain.exceptions;
+package br.com.bytebank.transactions.domain.exception;
 
 public class InvalidAmountException extends RuntimeException {
     public InvalidAmountException(String message) {
