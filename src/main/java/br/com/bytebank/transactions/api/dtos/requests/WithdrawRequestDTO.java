@@ -12,5 +12,5 @@ public record WithdrawRequestDTO(
 
         @Positive
         BigDecimal amount
-) {
+) implements AccountOperationRequest{
 }

@@ -10,5 +10,5 @@ public record DepositRequestDTO(
 
         @Positive
         BigDecimal amount
-) {
+) implements AccountOperationRequest {
 }

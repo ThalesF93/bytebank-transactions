@@ -1,9 +1,11 @@
 package br.com.bytebank.transactions.domain.entity;
 
+import br.com.bytebank.transactions.domain.enums.FailureReason;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -15,12 +17,18 @@ import java.util.UUID;
 @Table(name = "pending_transactions")
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Builder
+
 public class PendingTransaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
     private UUID id;
+
+    @OneToOne
+    @JoinColumn(name = "transaction_id")
+    private Transaction sourceTransaction;
 
     @Column(name = "origin_account_id", nullable = false)
     private UUID originAccountId;
@@ -40,6 +48,10 @@ public class PendingTransaction {
     @Enumerated(EnumType.STRING)
     private TransactionStatus transactionStatus;
 
+    @Column(name = "failure_reason")
+    @Enumerated(EnumType.STRING)
+    private FailureReason failureReason;
+
     @Column
     private LocalDateTime dateTime;
 
@@ -48,4 +60,8 @@ public class PendingTransaction {
 
     @Column
     private boolean processed;
+
+    public PendingTransaction() {
+
+    }
 }

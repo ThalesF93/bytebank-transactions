@@ -1,5 +1,7 @@
 package br.com.bytebank.transactions.domain.exception.handler;
+import br.com.bytebank.transactions.domain.exception.AccountNotFoundException;
 import br.com.bytebank.transactions.domain.exception.InsufficientBalanceException;
+import br.com.bytebank.transactions.domain.exception.TransactionException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
@@ -39,6 +41,30 @@ public class ExceptionHandler {
         problemDetail.setTitle("Invalid data");
         problemDetail.setProperty("errors", validationErrors);
         problemDetail.setType(URI.create("https://api.coderbank.com.br/errors/validation"));
+
+        return problemDetail;
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(AccountNotFoundException.class)
+    public ProblemDetail handleAccountNotFoundException(final Throwable throwable){
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND,
+                throwable.getMessage()
+        );
+        problemDetail.setTitle("Account not found");
+        problemDetail.setType(URI.create("https://api.coderbank.com.br/errors/notFound"));
+
+        return problemDetail;
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(TransactionException.class)
+    public ProblemDetail handleTransactionException(final Throwable throwable){
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT,
+                throwable.getMessage()
+        );
+        problemDetail.setTitle("Transference error");
+        problemDetail.setType(URI.create("https://api.coderbank.com.br/errors/notFound"));
 
         return problemDetail;
     }
