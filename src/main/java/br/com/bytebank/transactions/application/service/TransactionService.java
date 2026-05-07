@@ -14,7 +14,7 @@ public interface TransactionService {
 
     TransactionResponseDTO deposit(DepositRequestDTO requestDTO);
 
-    void transference(UUID originAccountId, UUID destinationAccountId, BigDecimal amount);
+    TransactionResponseDTO transference(UUID originAccountId, UUID destinationAccountId, BigDecimal amount);
 
-    public List<TransactionResponseDTO> generateBankStatement(UUID id);
+    List<TransactionResponseDTO> generateBankStatement(UUID id);
 }

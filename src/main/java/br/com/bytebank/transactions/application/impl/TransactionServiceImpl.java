@@ -8,6 +8,7 @@ import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.exception.InvalidAmountException;
+import br.com.bytebank.transactions.domain.exception.SameAccountException;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
 import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepository;
 import feign.FeignException;
@@ -16,8 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.security.auth.login.AccountNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -76,52 +80,67 @@ public class TransactionServiceImpl implements TransactionService {
                 transaction.getId(), transaction.getType(), transaction.getAmount(), transaction.getDescription(), transaction.getDateTime()
         );
     }
-//
-//    @Transactional
-//    public void transference(UUID originAccountId, UUID destinationAccountId, BigDecimal amount){
-//        Account originAccount = getAccount(originAccountId, "Origin Account not Found");
-//        Account destinationAccount = getAccount(destinationAccountId, "Destination Account not Found");
-//
-//        if (originAccount == destinationAccount){
-//            log.warn("User informed identical accounts. originAccountId={}, destinationAccountId={} ", originAccountId, destinationAccountId);
-//            throw new SameAccountException("The accounts must be different");
-//
-//        }
-//
-//        amountValidation(amount);
-//        balanceValidation(originAccount, amount);
-//
-//        originAccount.debit(amount);
-//        destinationAccount.credit(amount);
-//
-//        originAccount.addTransactions(new Transaction(OperationType.TRANSFER, amount));
-//        destinationAccount.addTransactions(new Transaction(OperationType.TRANSFER, amount, "Received"));
-//        log.info("Transference succeeded. originAccountId={}, destinationAccountId={}, value={}", originAccountId, destinationAccountId, amount);
-//        accountRepository.save(originAccount);
-//        accountRepository.save(destinationAccount);
-//
-//    }
-//
-//
-//
+
+    @Transactional
+    @Override
+    public TransactionResponseDTO transference(UUID originAccountId, UUID destinationAccountId, BigDecimal amount){
+
+        amountValidation(amount);
+
+        var originAccount = accountClient.findAccount(originAccountId);
+        var destinationAccount = accountClient.findAccount(destinationAccountId);
+
+        if (originAccountId.equals(destinationAccountId)){
+            log.warn("User informed identical accounts. originAccountId={}, destinationAccountId={} ", originAccountId, destinationAccountId);
+            throw new SameAccountException("The accounts must be different");
+
+        }
+        Transaction transaction = new Transaction();
+        transaction.setOriginAccountId(originAccountId);
+        transaction.setTargetAccountId(destinationAccountId);
+        transaction.setAmount(amount);
+        transaction.setStatus(TransactionStatus.PROCESSING);
+
+        transactionRepository.save(transaction);
+
+        try{
+            accountClient.debit(new WithdrawRequestDTO(originAccount.getBody().accountId(), amount));
+            accountClient.credit(new DepositRequestDTO(destinationAccount.getBody().accountId(),amount ));
+
+            transaction.setStatus(TransactionStatus.COMPLETED);
+            log.info("Transference succeeded. originAccountId={}, destinationAccountId={}, value={}", originAccountId, destinationAccountId, amount);
+            transactionRepository.save(transaction);
+
+            return TransactionResponseDTO.transferenceCompletedResponse(transaction);
+        }catch (RuntimeException e){
+
+            return TransactionResponseDTO.transferencePendingResponse(transaction);
+
+        }
+
+    }
+
+
+
     protected static void amountValidation(BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0){
             log.warn("Invalid value entered. value={}", amount);
             throw new InvalidAmountException("Amount must be greater than zero");
         }
     }
-//
-//
-//
-//    @Transactional
-//    public List<TransactionResponseDTO> generateBankStatement(UUID id)  {
-//        Account account = accountRepository.findById(id)
-//                .orElseThrow(()-> new AccountNotFoundException("Account not found"));
-//
-//        return account.getTransactions()
-//                .stream()
-//                .map(t-> new TransactionResponseDTO(t.getId(), t.getType(), t.getAmount(), t.getDescription(), t.getDateTime()))
-//                .toList();
-//    }
+
+
+
+    @Transactional
+    @Override
+    public List<TransactionResponseDTO> generateBankStatement(UUID id)  {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(()-> new AccountNotFoundException("Account not found"));
+
+        return account.getTransactions()
+                .stream()
+                .map(t-> new TransactionResponseDTO(t.getId(), t.getType(), t.getAmount(), t.getDescription(), t.getDateTime()))
+                .toList();
+    }
 
 }
