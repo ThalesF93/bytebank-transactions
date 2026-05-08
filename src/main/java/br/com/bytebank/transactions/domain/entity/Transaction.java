@@ -47,12 +47,6 @@ public class Transaction {
     @Column
     private String description;
 
-    @PrePersist
-    private void prePersist() {
-        this.dateTime = LocalDateTime.now();
-        this.status = TransactionStatus.PENDING;
-    }
-
 }
 
 

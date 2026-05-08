@@ -2,15 +2,22 @@ package br.com.bytebank.transactions.api.controller;
 
 
 import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
+import br.com.bytebank.transactions.api.dtos.requests.TransferenceRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.api.dtos.responses.BankStatementResponseDTO;
+import br.com.bytebank.transactions.api.dtos.responses.DepositResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
-import br.com.bytebank.transactions.application.impl.TransactionServiceImpl;
+import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
+import br.com.bytebank.transactions.application.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
 
 
 @RestController
@@ -19,12 +26,12 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class TransactionController {
 
-    private final TransactionServiceImpl transactionService;
+    private final TransactionService transactionService;
 
     @PostMapping("/deposit")
-    public ResponseEntity<TransactionResponseDTO> deposit(@Valid @RequestBody DepositRequestDTO depositRequestDTO){
+    public ResponseEntity<DepositResponseDTO> deposit(@Valid @RequestBody DepositRequestDTO depositRequestDTO){
 
-        log.info("Request received. endpoint=PATCH /deposit value={}",depositRequestDTO.amount());
+        log.info("Request received. endpoint=POST /deposit value={}",depositRequestDTO.amount());
 
         var deposit = transactionService.deposit(depositRequestDTO);
 
@@ -33,9 +40,9 @@ public class TransactionController {
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<TransactionResponseDTO> withdraw(@Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO){
+    public ResponseEntity<WithdrawResponseDTO> withdraw(@Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO){
 
-        log.info("Request received. endpoint=PATCH /withdraw value={}",withdrawRequestDTO.amount());
+        log.info("Request received. endpoint=POST /withdraw value={}",withdrawRequestDTO.amount());
 
         var transaction = transactionService.withdraw(withdrawRequestDTO);
 
@@ -43,22 +50,20 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.OK).body(transaction);
     }
 
-//    @PostMapping
-//    public ResponseEntity<String> transference(@Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO){
-//        log.info("Transference request received. endpoint=POST  value={}",transferenceRequestDTO.amount());
-//        transactionService.transference(
-//                transferenceRequestDTO.originAccountId(),
-//                transferenceRequestDTO.destinationAccountId(),
-//                transferenceRequestDTO.amount());
-//        log.info("Transference done successfully. value={}",transferenceRequestDTO.amount());
-//        return ResponseEntity.status(HttpStatus.OK).body("Operation successfully done");
-//    }
-//
-//    @GetMapping("/{id}/transactions")
-//    public ResponseEntity<List<TransactionResponseDTO>> getStatements(@PathVariable UUID id){
-//
-//        var transactions = accountService.generateBankStatement(id);
-//        return ResponseEntity.status(HttpStatus.OK).body(transactions);
-//    }
+    @PostMapping("/transference")
+    public ResponseEntity<TransactionResponseDTO> transference(@Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO){
+        log.info("Transference request received. endpoint=POST  value={}",transferenceRequestDTO.amount());
+        var transference = transactionService.transference(transferenceRequestDTO);
+        log.info("Transference done successfully. value={}",transferenceRequestDTO.amount());
+        return ResponseEntity.ok(transference);
+    }
+
+    @GetMapping("/transactions/{id}")
+    public ResponseEntity<List<BankStatementResponseDTO>> getStatement(@PathVariable UUID id){
+
+        var transactions = transactionService.generateBankStatement(id);
+        log.info("Statement generated from accountID id={}", id);
+        return ResponseEntity.ok(transactions);
+    }
 
 }

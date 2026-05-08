@@ -4,6 +4,7 @@ import br.com.bytebank.transactions.api.dtos.requests.AccountOperationRequest;
 import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.TransferenceRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.api.dtos.responses.BankStatementResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.DepositResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
@@ -149,14 +150,13 @@ public class TransactionServiceImpl implements TransactionService {
 
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
-    public List<TransactionResponseDTO> generateBankStatement(UUID id)  {
-        var account = accountClient.findAccount(id);
-
-        return account.getTransactions()
+    public List<BankStatementResponseDTO> generateBankStatement(UUID accountId)  {
+        var transactions = transactionRepository.findByOriginAccountIdOrTargetAccountIdOrderByDateTimeDesc(accountId, accountId);
+        return transactions
                 .stream()
-                .map(t-> new TransactionResponseDTO(t.getId(), t.getType(), t.getAmount(), t.getDescription(), t.getDateTime()))
+                .map(BankStatementResponseDTO::generateStatement)
                 .toList();
     }
 
@@ -173,7 +173,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     private static PendingTransaction createPendingTransaction(Transaction transaction, FailureReason failureReason) {
         return PendingTransaction.builder()
-                .sourceTransactionId(transaction)
+                .sourceTransaction(transaction)
                 .originAccountId(transaction.getOriginAccountId())
                 .destinationAccountId(transaction.getTargetAccountId())
                 .amount(transaction.getAmount())

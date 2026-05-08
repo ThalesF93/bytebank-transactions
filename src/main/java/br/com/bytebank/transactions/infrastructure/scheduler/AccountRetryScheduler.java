@@ -163,6 +163,21 @@ public class AccountRetryScheduler {
     }
 
     private void handleMaxAttempts(PendingTransaction pendingOpening) {
+        if (pendingOpening.getOperationType() == OperationType.TRANSFER
+                && pendingOpening.getFailureReason() == FailureReason.CREDIT_FAILED) {
+            try {
+                accountClient.credit(
+                        new DepositRequestDTO(
+                                pendingOpening.getOriginAccountId(),
+                                pendingOpening.getAmount()
+                        )
+                );
+                log.info("Rollback succeeded. Refunded origin account. pendingId={}", pendingOpening.getId());
+            } catch (FeignException e) {
+                log.error("Rollback failed. Manual intervention required. pendingId={}", pendingOpening.getId());
+                return;
+            }
+        }
         pendingOpening.setTransactionStatus(TransactionStatus.FAILED);
         pendingOpening.setProcessed(true);
         transactionRepository.findById(pendingOpening.getSourceTransaction().getId())
