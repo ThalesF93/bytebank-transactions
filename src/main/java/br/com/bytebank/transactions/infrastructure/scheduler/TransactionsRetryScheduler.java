@@ -21,7 +21,7 @@ import java.util.List;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class AccountRetryScheduler {
+public class TransactionsRetryScheduler {
 
     private static final int MAX_ATTEMPTS = 5;
 
@@ -29,7 +29,7 @@ public class AccountRetryScheduler {
     private final PendingTransactionRepository pendingTransactionRepository;
     private final AccountClient accountClient;
 
-    @Scheduled(fixedDelay = 60000)
+    @Scheduled(fixedDelay = 300000)
     public  void retryPendingDeposit(){
         log.info("Running retryPendingDeposit scheduler...");
         List<PendingTransaction> list =

@@ -5,9 +5,7 @@ import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
-import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,9 +15,11 @@ import java.util.UUID;
 @Table(name = "pending_transactions")
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
-
 public class PendingTransaction {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -61,7 +61,5 @@ public class PendingTransaction {
     @Column
     private boolean processed;
 
-    public PendingTransaction() {
 
-    }
 }
