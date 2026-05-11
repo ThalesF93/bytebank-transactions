@@ -3,7 +3,7 @@ spring:
     problemdetails:
       enabled: false
   application:
-    name: transactions
+    name: bytebank-transactions
   jpa:
     hibernate:
       ddl-auto: update
