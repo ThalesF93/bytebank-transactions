@@ -32,3 +32,16 @@ resilience4j:
         failure-rate-threshold: 50        # abre o circuito se 50% falharem
         wait-duration-in-open-state: 30s  # fica bloqueado por 30s
         permitted-number-of-calls-in-half-open-state: 3
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+logging:
+  structured:
+    format:
+      file: logstash
+  file:
+    name: logs/transactions.json
