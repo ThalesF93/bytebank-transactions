@@ -14,8 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.UUID;
 
-@FeignClient(name = "account-service",
-url = "http://localhost:8082",
+@FeignClient(name = "bytebank-accounts",
 path = "api/v1/accounts",
 fallback = AccountClientFallback.class,
 configuration = FeignConfig.class)
