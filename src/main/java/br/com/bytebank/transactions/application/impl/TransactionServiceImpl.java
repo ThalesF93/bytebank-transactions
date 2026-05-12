@@ -138,10 +138,11 @@ public class TransactionServiceImpl implements TransactionService {
 
                 return TransactionResponseDTO.transferencePendingResponse(transaction);
             }
-        } catch (FeignException.Conflict e) {
+        } catch (InsufficientBalanceException e) {
             transaction.setStatus(TransactionStatus.FAILED);
             transactionRepository.save(transaction);
-            throw new InsufficientBalanceException("Insufficient balance for account: " + dto.originAccountId());
+            log.warn("Insufficient balance for account: {}", dto.originAccountId());
+            throw e;
 
         } catch (FeignException e) {
             log.error("Debit failed. error={}", e.getMessage());

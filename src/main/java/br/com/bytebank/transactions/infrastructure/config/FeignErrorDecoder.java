@@ -1,6 +1,7 @@
 package br.com.bytebank.transactions.infrastructure.config;
 
 
+import br.com.bytebank.transactions.domain.exception.InsufficientBalanceException;
 import br.com.bytebank.transactions.domain.exception.ResourceNotFoundException;
 import feign.FeignException;
 import feign.Response;
@@ -16,6 +17,7 @@ public class FeignErrorDecoder implements ErrorDecoder {
         return switch (response.status()){
             case 400 -> new BadRequestException("Invalid Request");
             case 404 -> new ResourceNotFoundException("Resource not found");
+            case 409 -> new InsufficientBalanceException("Insufficient balance");
             case 500 -> new ServiceUnavailableException("Service Unavailable");
             default -> new FeignException.FeignClientException(
                     response.status(), response.reason(), response.request(), null, null
