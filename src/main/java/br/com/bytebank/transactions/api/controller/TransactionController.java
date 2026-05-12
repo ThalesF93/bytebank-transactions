@@ -58,12 +58,18 @@ public class TransactionController {
         return ResponseEntity.ok(transference);
     }
 
-    @GetMapping("/transactions/{id}")
+    @GetMapping("/statement/{id}")
     public ResponseEntity<List<BankStatementResponseDTO>> getStatement(@PathVariable UUID id){
 
         var transactions = transactionService.generateBankStatement(id);
         log.info("Statement generated from accountID id={}", id);
         return ResponseEntity.ok(transactions);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<TransactionResponseDTO> getTransaction(@PathVariable UUID id){
+        log.info("Found AccountID id={}", id);
+        return ResponseEntity.ok(transactionService.getTransactionById(id));
     }
 
 }

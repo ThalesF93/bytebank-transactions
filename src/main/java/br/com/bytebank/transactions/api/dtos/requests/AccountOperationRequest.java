@@ -4,8 +4,6 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface AccountOperationRequest {
-    default UUID accountId(){
-        return null;
-    };
+    UUID accountId();
     BigDecimal amount();
 }

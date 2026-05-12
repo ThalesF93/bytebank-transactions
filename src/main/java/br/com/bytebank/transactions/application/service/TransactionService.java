@@ -21,4 +21,6 @@ public interface TransactionService {
     TransactionResponseDTO transference(TransferenceRequestDTO dto);
 
     List<BankStatementResponseDTO> generateBankStatement(UUID id);
+
+    TransactionResponseDTO getTransactionById(UUID id);
 }

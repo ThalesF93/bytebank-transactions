@@ -14,9 +14,7 @@ import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.FailureReason;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
-import br.com.bytebank.transactions.domain.exception.AccountNotFoundException;
-import br.com.bytebank.transactions.domain.exception.InvalidAmountException;
-import br.com.bytebank.transactions.domain.exception.SameAccountException;
+import br.com.bytebank.transactions.domain.exception.*;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
 import br.com.bytebank.transactions.infrastructure.openfeign.dtos.responses.AccountResponseDTO;
 import br.com.bytebank.transactions.infrastructure.repositories.PendingTransactionRepository;
@@ -75,7 +73,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         try {
             accountClient.credit(new DepositRequestDTO(requestDTO.accountId(), requestDTO.amount()));
-
+            transaction.setStatus(TransactionStatus.COMPLETED);
             log.info("Deposit succeeded. accountId={}, value={}", requestDTO.accountId(), requestDTO.amount());
             transactionRepository.save(transaction);
 
@@ -99,12 +97,16 @@ public class TransactionServiceImpl implements TransactionService {
             originAccount = accountClient.findAccount(dto.originAccountId());
         } catch (FeignException.NotFound e) {
             throw new AccountNotFoundException("Origin account not found: " + dto.originAccountId());
+        }catch (AccountServiceUnavailableException e){
+            throw e;
         }
 
         try {
             destinationAccount = accountClient.findAccount(dto.destinationAccountId());
-        } catch (FeignException.NotFound e) {
+        } catch (FeignException e) {
             throw new AccountNotFoundException ("Destination account not found: " + dto.destinationAccountId());
+        }catch (AccountServiceUnavailableException e){
+            throw e;
         }
 
         if (dto.originAccountId().equals(dto.destinationAccountId())){
@@ -158,6 +160,14 @@ public class TransactionServiceImpl implements TransactionService {
                 .stream()
                 .map(BankStatementResponseDTO::generateStatement)
                 .toList();
+    }
+
+    @Override
+    public TransactionResponseDTO getTransactionById(UUID id) {
+        var transaction = transactionRepository.findById(id).orElseThrow(
+                ()-> new TransactionException("Transaction not found. ID= " + id)
+        );
+        return new TransactionResponseDTO(id, transaction.getTargetAccountId(), transaction.getType(), transaction.getStatus(), transaction.getAmount(), null);
     }
 
     @NonNull

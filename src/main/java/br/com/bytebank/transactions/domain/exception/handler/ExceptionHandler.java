@@ -1,5 +1,6 @@
 package br.com.bytebank.transactions.domain.exception.handler;
 import br.com.bytebank.transactions.domain.exception.AccountNotFoundException;
+import br.com.bytebank.transactions.domain.exception.AccountServiceUnavailableException;
 import br.com.bytebank.transactions.domain.exception.InsufficientBalanceException;
 import br.com.bytebank.transactions.domain.exception.TransactionException;
 import org.springframework.http.HttpStatus;
@@ -80,5 +81,17 @@ public class ExceptionHandler {
                     validationErrors.put(fieldName, errorMessage);
                 });
         return validationErrors;
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(AccountServiceUnavailableException.class)
+    public ProblemDetail handleAccountServiceUnavailableException(final Throwable throwable){
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                throwable.getMessage()
+        );
+        problemDetail.setTitle("Account service unavailable");
+        problemDetail.setType(URI.create("https://api.coderbank.com.br/errors/notFound"));
+
+        return problemDetail;
     }
 }

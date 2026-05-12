@@ -30,10 +30,10 @@ public class PendingTransaction {
     @JoinColumn(name = "transaction_id")
     private Transaction sourceTransaction;
 
-    @Column(name = "origin_account_id", nullable = false)
+    @Column(name = "origin_account_id")
     private UUID originAccountId;
 
-    @Column(name = "destination_account_id", nullable = false)
+    @Column(name = "destination_account_id")
     private UUID destinationAccountId;
 
     @Column
