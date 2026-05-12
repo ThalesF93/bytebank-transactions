@@ -3,12 +3,12 @@ package br.com.bytebank.transactions.infrastructure.config;
 
 import br.com.bytebank.transactions.domain.exception.InsufficientBalanceException;
 import br.com.bytebank.transactions.domain.exception.ResourceNotFoundException;
+import br.com.bytebank.transactions.domain.exception.ServiceUnavailableException;
 import feign.FeignException;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 import org.apache.coyote.BadRequestException;
 
-import javax.naming.ServiceUnavailableException;
 
 public class FeignErrorDecoder implements ErrorDecoder {
 
