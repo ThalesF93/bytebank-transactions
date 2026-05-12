@@ -87,32 +87,30 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public TransactionResponseDTO transference(TransferenceRequestDTO dto){
+        if (dto.originAccountId().equals(dto.destinationAccountId())){
+            log.warn("User informed identical accounts. originAccountId={}, destinationAccountId={} ", dto.originAccountId(), dto.destinationAccountId());
+            throw new SameAccountException("The accounts must be different");
 
+        }
         amountValidation(dto.amount());
 
-        ResponseEntity<AccountResponseDTO> originAccount = null;
-        ResponseEntity<AccountResponseDTO> destinationAccount = null;
+        AccountResponseDTO originAccount;
+        AccountResponseDTO destinationAccount;
 
         try {
             originAccount = accountClient.findAccount(dto.originAccountId());
         } catch (FeignException.NotFound e) {
             throw new AccountNotFoundException("Origin account not found: " + dto.originAccountId());
-        }catch (AccountServiceUnavailableException e){
-            throw e;
+        }catch (FeignException e){
+            throw new  AccountServiceUnavailableException("Account service unavailable");
         }
 
         try {
             destinationAccount = accountClient.findAccount(dto.destinationAccountId());
-        } catch (FeignException e) {
+        } catch (FeignException.NotFound e) {
             throw new AccountNotFoundException ("Destination account not found: " + dto.destinationAccountId());
-        }catch (AccountServiceUnavailableException e){
-            throw e;
-        }
-
-        if (dto.originAccountId().equals(dto.destinationAccountId())){
-            log.warn("User informed identical accounts. originAccountId={}, destinationAccountId={} ", dto.originAccountId(), dto.destinationAccountId());
-            throw new SameAccountException("The accounts must be different");
-
+        }catch (FeignException e){
+            throw new AccountServiceUnavailableException("Account service unavailable");
         }
 
         Transaction transaction = createTransactionEntity(dto, OperationType.TRANSFER, TransactionStatus.PROCESSING);
@@ -120,10 +118,10 @@ public class TransactionServiceImpl implements TransactionService {
         transactionRepository.save(transaction);
 
         try {
-            accountClient.debit(new WithdrawRequestDTO(originAccount.getBody().accountId(), dto.amount()));
-            log.info("Debit succeeded into accountId={}", originAccount.getBody().accountId());
+            accountClient.debit(new WithdrawRequestDTO(originAccount.accountId(), dto.amount()));
+            log.info("Debit succeeded into accountId={}", originAccount.accountId());
             try {
-                accountClient.credit(new DepositRequestDTO(destinationAccount.getBody().accountId(), dto.amount() ));
+                accountClient.credit(new DepositRequestDTO(destinationAccount.accountId(), dto.amount() ));
 
                 transaction.setStatus(TransactionStatus.COMPLETED);
                 log.info("Transference succeeded. originAccountId={}, destinationAccountId={}, value={}", dto.originAccountId(), dto.destinationAccountId(), dto.amount());
@@ -140,12 +138,14 @@ public class TransactionServiceImpl implements TransactionService {
 
                 return TransactionResponseDTO.transferencePendingResponse(transaction);
             }
+        } catch (FeignException.Conflict e) {
+            transaction.setStatus(TransactionStatus.FAILED);
+            transactionRepository.save(transaction);
+            throw new InsufficientBalanceException("Insufficient balance for account: " + dto.originAccountId());
+
         } catch (FeignException e) {
-
-            log.error("Debit still pending. error={}", e.getMessage());
-
+            log.error("Debit failed. error={}", e.getMessage());
             PendingTransaction pendingTransaction = createPendingTransaction(transaction, FailureReason.DEBIT_FAILED);
-
             pendingTransactionRepository.save(pendingTransaction);
             return TransactionResponseDTO.transferencePendingResponse(transaction);
         }

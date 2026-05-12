@@ -23,19 +23,19 @@ import java.util.UUID;
 public class AccountClientFallback implements AccountClient {
 
     @Override
-    public ResponseEntity<Void> debit(WithdrawRequestDTO dto) {
+    public Void debit(WithdrawRequestDTO dto) {
         log.error("Debit fallback triggered. Account service unavailable. accountId={}", dto.accountId());
         throw new TransactionException("Account service unavailable for debit");
     }
 
     @Override
-    public ResponseEntity<Void> credit(DepositRequestDTO dto) {
+    public Void credit(DepositRequestDTO dto) {
         log.error("Credit fallback triggered. Account service unavailable. accountId={}", dto.accountId());
         throw new TransactionException("Account service unavailable for credit");
     }
 
     @Override
-    public ResponseEntity<AccountResponseDTO> findAccount(UUID id) {
+    public AccountResponseDTO findAccount(UUID id) {
         log.error("FindAccount fallback triggered. Account service unavailable. accountId={}", id);
         throw new AccountServiceUnavailableException("Account service unavailable");
     }

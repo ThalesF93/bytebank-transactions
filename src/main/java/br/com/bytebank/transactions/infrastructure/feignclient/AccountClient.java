@@ -21,13 +21,13 @@ configuration = FeignConfig.class)
 public interface AccountClient {
 
     @GetMapping("/{id}")
-    ResponseEntity<AccountResponseDTO> findAccount(@PathVariable UUID id);
+    AccountResponseDTO findAccount(@PathVariable UUID id);
 
     @PostMapping("/debit")
-    ResponseEntity<Void> debit(@RequestBody WithdrawRequestDTO dto);
+    Void debit(@RequestBody WithdrawRequestDTO dto);
 
     @PostMapping("/credit")
-    ResponseEntity<Void> credit (@RequestBody DepositRequestDTO dto);
+    Void credit (@RequestBody DepositRequestDTO dto);
 
 
 
