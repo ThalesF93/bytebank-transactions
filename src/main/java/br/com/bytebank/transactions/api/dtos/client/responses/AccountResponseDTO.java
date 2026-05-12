@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.infrastructure.openfeign.dtos.responses;
+package br.com.bytebank.transactions.api.dtos.client.responses;
 
 import java.math.BigDecimal;
 import java.util.UUID;

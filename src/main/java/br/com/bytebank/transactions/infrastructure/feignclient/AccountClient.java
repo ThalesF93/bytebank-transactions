@@ -3,7 +3,7 @@ package br.com.bytebank.transactions.infrastructure.feignclient;
 import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.infrastructure.config.FeignConfig;
-import br.com.bytebank.transactions.infrastructure.openfeign.dtos.responses.AccountResponseDTO;
+import br.com.bytebank.transactions.api.dtos.client.responses.AccountResponseDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
