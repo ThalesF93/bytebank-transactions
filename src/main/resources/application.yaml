@@ -1,4 +1,9 @@
 spring:
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: 5672
+    username: guest
+    password: guest
   mvc:
     problemdetails:
       enabled: false
