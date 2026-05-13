@@ -17,6 +17,7 @@ import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.exception.*;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
 import br.com.bytebank.transactions.api.dtos.client.responses.AccountResponseDTO;
+import br.com.bytebank.transactions.infrastructure.messaging.TransactionEventPublisher;
 import br.com.bytebank.transactions.infrastructure.repositories.PendingTransactionRepository;
 import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepository;
 import feign.FeignException;
@@ -39,6 +40,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final PendingTransactionRepository pendingTransactionRepository;
     private final TransactionRepository transactionRepository;
     private final AccountClient accountClient;
+    private final TransactionEventPublisher eventPublisher;
 
 
     public WithdrawResponseDTO withdraw(WithdrawRequestDTO requestDTO){
@@ -126,6 +128,8 @@ public class TransactionServiceImpl implements TransactionService {
                 log.info("Transference succeeded. originAccountId={}, destinationAccountId={}, value={}", dto.originAccountId(), dto.destinationAccountId(), dto.amount());
                 transactionRepository.save(transaction);
 
+                eventPublisher.publishTransferenceCompleted(transaction);
+                log.info("Transaction Event published successfully");
                 return TransactionResponseDTO.transferenceCompletedResponse(transaction);
 
             }catch (FeignException e){

@@ -1,10 +1,12 @@
 package br.com.bytebank.transactions.infrastructure.feignclient;
 
+import br.com.bytebank.transactions.api.dtos.client.responses.CustomerClientResponseDTO;
 import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.infrastructure.config.FeignConfig;
 import br.com.bytebank.transactions.api.dtos.client.responses.AccountResponseDTO;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +27,9 @@ public interface AccountClient {
 
     @PostMapping("/credit")
     Void credit (@RequestBody DepositRequestDTO dto);
+
+    @GetMapping("feign/customer/{id}")
+    CustomerClientResponseDTO findCustomerByAccountId(@PathVariable UUID id);
 
 
 
