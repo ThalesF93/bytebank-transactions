@@ -14,7 +14,6 @@ import java.util.UUID;
 
 @FeignClient(name = "bytebank-accounts",
 path = "api/v1/accounts",
-//fallback = AccountClientFallback.class,
 configuration = FeignConfig.class)
 public interface AccountClient {
 
