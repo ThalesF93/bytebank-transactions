@@ -23,7 +23,7 @@ public class TransactionEventPublisher {
     public void publishTransferenceCompleted(Transaction transaction){
         CustomerClientResponseDTO customer;
         try {
-            customer = accountClient.findCustomerByAccountId(transaction.getId());
+            customer = accountClient.findCustomerByAccountId(transaction.getOriginAccountId());
         } catch (FeignException.NotFound e) {
             throw new CustomerNotFoundException("Customer Not Found. See StackTrace from MS-Accounts to find out");
         }

@@ -1,12 +1,10 @@
 package br.com.bytebank.transactions.domain.exception.handler;
-import br.com.bytebank.transactions.domain.exception.AccountNotFoundException;
-import br.com.bytebank.transactions.domain.exception.AccountServiceUnavailableException;
-import br.com.bytebank.transactions.domain.exception.InsufficientBalanceException;
-import br.com.bytebank.transactions.domain.exception.TransactionException;
+import br.com.bytebank.transactions.domain.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.net.URI;
@@ -91,6 +89,34 @@ public class ExceptionHandler {
         );
         problemDetail.setTitle("Account service unavailable");
         problemDetail.setType(URI.create("https://api.coderbank.com.br/errors/notFound"));
+
+        return problemDetail;
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(NoFallbackAvailableException.class)
+    public ProblemDetail handleNoFallbackAvailable(final Throwable exception){
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "External service unavailable or circuit breaker fallback not configured."
+        );
+
+        problemDetail.setTitle("External Service Unavailable");
+        problemDetail.setType(URI.create("https://api.coderbank.com.br/errors/service-unavailable"));
+
+        return problemDetail;
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(ServiceUnavailableException.class)
+    public ProblemDetail handleServiceUnavailable(final Throwable exception){
+
+        ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                exception.getMessage()
+        );
+
+        problemDetail.setTitle("External Service Unavailable");
+        problemDetail.setType(URI.create("https://api.coderbank.com.br/errors/service-unavailable"));
 
         return problemDetail;
     }

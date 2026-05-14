@@ -23,6 +23,7 @@ import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepos
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -128,11 +129,19 @@ public class TransactionServiceImpl implements TransactionService {
                 log.info("Transference succeeded. originAccountId={}, destinationAccountId={}, value={}", dto.originAccountId(), dto.destinationAccountId(), dto.amount());
                 transactionRepository.save(transaction);
 
-                eventPublisher.publishTransferenceCompleted(transaction);
-                log.info("Transaction Event published successfully");
-                return TransactionResponseDTO.transferenceCompletedResponse(transaction);
+                try {
+                    eventPublisher.publishTransferenceCompleted(transaction);
+                    log.info("Transaction Event published successfully");
+                } catch (Exception e) {
+                    log.error("Transfer completed, but event publishing failed. transactionId={}, error={}",
+                            transaction.getId(), e.getMessage(), e);
+                }
 
-            }catch (FeignException e){
+                return TransactionResponseDTO.transferenceCompletedResponse(transaction);
+            } catch (NoFallbackAvailableException | FeignException | ServiceUnavailableException e) {
+
+                transaction.setStatus(TransactionStatus.PENDING);
+                transactionRepository.save(transaction);
 
                 PendingTransaction pendingTransaction = createPendingTransaction(transaction, FailureReason.CREDIT_FAILED);
 
@@ -147,13 +156,17 @@ public class TransactionServiceImpl implements TransactionService {
             log.warn("Insufficient balance for account: {}", dto.originAccountId());
             throw e;
 
-        } catch (FeignException e) {
+        } catch (NoFallbackAvailableException | FeignException | ServiceUnavailableException e) {
             log.error("Debit failed. error={}", e.getMessage());
+
+            transaction.setStatus(TransactionStatus.PENDING);
+            transactionRepository.save(transaction);
+
             PendingTransaction pendingTransaction = createPendingTransaction(transaction, FailureReason.DEBIT_FAILED);
             pendingTransactionRepository.save(pendingTransaction);
+
             return TransactionResponseDTO.transferencePendingResponse(transaction);
         }
-
     }
 
     @Transactional(readOnly = true)

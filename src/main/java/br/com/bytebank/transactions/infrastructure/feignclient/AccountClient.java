@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.UUID;
 
 @FeignClient(name = "bytebank-accounts",
-path = "api/v1/accounts",
+path = "/api/v1/accounts",
 configuration = FeignConfig.class)
 public interface AccountClient {
 
@@ -28,9 +28,7 @@ public interface AccountClient {
     @PostMapping("/credit")
     Void credit (@RequestBody DepositRequestDTO dto);
 
-    @GetMapping("feign/customer/{id}")
+    @GetMapping("/feign/customer/{id}")
     CustomerClientResponseDTO findCustomerByAccountId(@PathVariable UUID id);
-
-
 
 }
