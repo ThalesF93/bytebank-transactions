@@ -89,12 +89,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public TransactionResponseDTO transference(TransferenceRequestDTO dto){
-        if (dto.originAccountId().equals(dto.destinationAccountId())){
-            log.warn("User informed identical accounts. originAccountId={}, destinationAccountId={} ", dto.originAccountId(), dto.destinationAccountId());
-            throw new SameAccountException("The accounts must be different");
-
-        }
-        amountValidation(dto.amount());
+        validatingTransference(dto);
 
         AccountResponseDTO originAccount;
         AccountResponseDTO destinationAccount;
@@ -119,54 +114,7 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setTargetAccountId(dto.destinationAccountId());
         transactionRepository.save(transaction);
 
-        try {
-            accountClient.debit(new WithdrawRequestDTO(originAccount.accountId(), dto.amount()));
-            log.info("Debit succeeded into accountId={}", originAccount.accountId());
-            try {
-                accountClient.credit(new DepositRequestDTO(destinationAccount.accountId(), dto.amount() ));
-
-                transaction.setStatus(TransactionStatus.COMPLETED);
-                log.info("Transference succeeded. originAccountId={}, destinationAccountId={}, value={}", dto.originAccountId(), dto.destinationAccountId(), dto.amount());
-                transactionRepository.save(transaction);
-
-                try {
-                    eventPublisher.publishTransferenceCompleted(transaction);
-                    log.info("Transaction Event published successfully");
-                } catch (Exception e) {
-                    log.error("Transfer completed, but event publishing failed. transactionId={}, error={}",
-                            transaction.getId(), e.getMessage(), e);
-                }
-
-                return TransactionResponseDTO.transferenceCompletedResponse(transaction);
-            } catch (NoFallbackAvailableException | FeignException | ServiceUnavailableException e) {
-
-                transaction.setStatus(TransactionStatus.PENDING);
-                transactionRepository.save(transaction);
-
-                PendingTransaction pendingTransaction = createPendingTransaction(transaction, FailureReason.CREDIT_FAILED);
-
-                pendingTransactionRepository.save(pendingTransaction);
-                log.info("Transference is pending. originAccountId={}, destinationAccountId={}, value={}", dto.originAccountId(), dto.destinationAccountId(), dto.amount());
-
-                return TransactionResponseDTO.transferencePendingResponse(transaction);
-            }
-        } catch (InsufficientBalanceException e) {
-            transaction.setStatus(TransactionStatus.FAILED);
-            transactionRepository.save(transaction);
-            log.warn("Insufficient balance for account: {}", dto.originAccountId());
-            throw e;
-
-        } catch (NoFallbackAvailableException | FeignException | ServiceUnavailableException e) {
-            log.error("Debit failed. error={}", e.getMessage());
-
-            transaction.setStatus(TransactionStatus.PENDING);
-            transactionRepository.save(transaction);
-
-            PendingTransaction pendingTransaction = createPendingTransaction(transaction, FailureReason.DEBIT_FAILED);
-            pendingTransactionRepository.save(pendingTransaction);
-
-            return TransactionResponseDTO.transferencePendingResponse(transaction);
-        }
+       return executeTransfer(transaction, dto, originAccount, destinationAccount);
     }
 
     @Transactional(readOnly = true)
@@ -219,5 +167,62 @@ public class TransactionServiceImpl implements TransactionService {
             throw new InvalidAmountException("Amount must be greater than zero");
         }
     }
+
+    private static void validatingTransference(TransferenceRequestDTO dto) {
+        if (dto.originAccountId().equals(dto.destinationAccountId())){
+            log.warn("User informed identical accounts. originAccountId={}, destinationAccountId={} ", dto.originAccountId(), dto.destinationAccountId());
+            throw new SameAccountException("The accounts must be different");
+
+        }
+        amountValidation(dto.amount());
+    }
+
+    private TransactionResponseDTO executeTransfer(
+            Transaction transaction,
+            TransferenceRequestDTO dto,
+            AccountResponseDTO originAccount,
+            AccountResponseDTO destinationAccount) {
+
+        if (isAccountServiceUnavailable(() -> accountClient.debit(new WithdrawRequestDTO(originAccount.accountId(), dto.amount())))) {
+            return markAsPending(transaction, FailureReason.DEBIT_FAILED, dto);
+        }
+
+        if (isAccountServiceUnavailable(() -> accountClient.credit(new DepositRequestDTO(destinationAccount.accountId(), dto.amount())))) {
+            return markAsPending(transaction, FailureReason.CREDIT_FAILED, dto);
+        }
+
+        transaction.setStatus(TransactionStatus.COMPLETED);
+        transactionRepository.save(transaction);
+
+        eventPublisher.publishTransferenceCompleted(transaction);
+
+        log.info("Transference succeeded. originAccountId={}, destinationAccountId={}, value={}",
+                dto.originAccountId(), dto.destinationAccountId(), dto.amount());
+
+        return TransactionResponseDTO.transferenceCompletedResponse(transaction);
+    }
+
+    private boolean isAccountServiceUnavailable(Runnable operation) {
+        try {
+            operation.run();
+            return false;
+        } catch (AccountServiceUnavailableException | ServiceUnavailableException e) {
+            log.warn("Account service unavailable: {}", e.getMessage());
+            return true;
+        }
+    }
+
+    private TransactionResponseDTO markAsPending(Transaction transaction, FailureReason reason, TransferenceRequestDTO dto) {
+        transaction.setStatus(TransactionStatus.PENDING);
+        transactionRepository.save(transaction);
+
+        pendingTransactionRepository.save(createPendingTransaction(transaction, reason));
+
+        log.info("Transference pending. originAccountId={}, destinationAccountId={}, value={}",
+                dto.originAccountId(), dto.destinationAccountId(), dto.amount());
+
+        return TransactionResponseDTO.transferencePendingResponse(transaction);
+    }
+
 
 }
