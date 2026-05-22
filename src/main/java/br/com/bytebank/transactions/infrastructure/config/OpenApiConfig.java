@@ -1,4 +1,4 @@
-package br.com.bytebank.customers.infrastructure.config;
+package br.com.bytebank.transactions.infrastructure.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.servers.Server;
@@ -21,9 +21,9 @@ public class OpenApiConfig {
     public OpenAPI accountsOpenAPI(){
         return new OpenAPI()
                 .info(new Info()
-                        .title("ByteBank Customer Service API")
-                        .description("API responsible to manage ByteBank customers")
-                        .version("v2.0.0")
+                        .title("ByteBank Transaction API")
+                        .description("API responsible to manage ByteBank transactions")
+                        .version("v1.0.0")
                         .contact(new Contact()
                                 .name("Thales Fernandes")
                                 .email("thalesgarcezf@gmail.com")
