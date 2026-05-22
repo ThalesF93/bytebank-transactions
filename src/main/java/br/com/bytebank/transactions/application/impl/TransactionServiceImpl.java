@@ -14,7 +14,7 @@ import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.FailureReason;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
-import br.com.bytebank.transactions.domain.exception.*;
+import br.com.bytebank.transactions.domain.exception.customized_exceptions.*;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
 import br.com.bytebank.transactions.api.dtos.client.responses.AccountResponseDTO;
 import br.com.bytebank.transactions.infrastructure.messaging.TransactionEventPublisher;
@@ -23,7 +23,6 @@ import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepos
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,7 +98,7 @@ public class TransactionServiceImpl implements TransactionService {
         } catch (FeignException.NotFound e) {
             throw new AccountNotFoundException("Origin account not found: " + dto.originAccountId());
         }catch (FeignException e){
-            throw new  AccountServiceUnavailableException("Account service unavailable");
+            throw new AccountServiceUnavailableException("Account service unavailable");
         }
 
         try {

@@ -8,6 +8,7 @@ import br.com.bytebank.transactions.api.dtos.responses.BankStatementResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.DepositResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
+import br.com.bytebank.transactions.api.openapi.controller.TransactionControllerOpenApi;
 import br.com.bytebank.transactions.application.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +25,11 @@ import java.util.UUID;
 @RequestMapping("api/v1/transactions")
 @RequiredArgsConstructor
 @Slf4j
-public class TransactionController {
+public class TransactionController implements TransactionControllerOpenApi {
 
     private final TransactionService transactionService;
 
+    @Override
     @PostMapping("/deposit")
     public ResponseEntity<DepositResponseDTO> deposit(@Valid @RequestBody DepositRequestDTO depositRequestDTO){
 
@@ -39,6 +41,7 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.OK).body(deposit);
     }
 
+    @Override
     @PostMapping("/withdraw")
     public ResponseEntity<WithdrawResponseDTO> withdraw(@Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO){
 
@@ -50,6 +53,7 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.OK).body(transaction);
     }
 
+    @Override
     @PostMapping("/transference")
     public ResponseEntity<TransactionResponseDTO> transference(@Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO){
         log.info("Transference request received. endpoint=POST  value={}",transferenceRequestDTO.amount());
@@ -58,6 +62,7 @@ public class TransactionController {
         return ResponseEntity.ok(transference);
     }
 
+    @Override
     @GetMapping("/statement/{id}")
     public ResponseEntity<List<BankStatementResponseDTO>> getStatement(@PathVariable UUID id){
 
@@ -66,6 +71,7 @@ public class TransactionController {
         return ResponseEntity.ok(transactions);
     }
 
+    @Override
     @GetMapping("/{id}")
     public ResponseEntity<TransactionResponseDTO> getTransaction(@PathVariable UUID id){
         log.info("Found AccountID id={}", id);

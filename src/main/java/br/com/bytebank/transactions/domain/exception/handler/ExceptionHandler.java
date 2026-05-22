@@ -1,5 +1,5 @@
 package br.com.bytebank.transactions.domain.exception.handler;
-import br.com.bytebank.transactions.domain.exception.*;
+import br.com.bytebank.transactions.domain.exception.customized_exceptions.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.validation.FieldError;
