@@ -1,7 +1,10 @@
 package br.com.bytebank.transactions.domain.exception.customized_exceptions;
 
-public class ServiceUnavailableException extends RuntimeException {
+import br.com.bytebank.transactions.domain.exception.default_exception.DefaultException;
+import org.springframework.http.HttpStatus;
+
+public class ServiceUnavailableException extends DefaultException {
     public ServiceUnavailableException(String message) {
-        super(message);
+        super("SERVICE_UNAVAILABLE", message, HttpStatus.SERVICE_UNAVAILABLE);
     }
 }

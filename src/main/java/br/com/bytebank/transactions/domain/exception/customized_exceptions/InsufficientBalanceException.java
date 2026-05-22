@@ -1,7 +1,10 @@
 package br.com.bytebank.transactions.domain.exception.customized_exceptions;
 
-public class InsufficientBalanceException extends RuntimeException {
+import br.com.bytebank.transactions.domain.exception.default_exception.DefaultException;
+import org.springframework.http.HttpStatus;
+
+public class InsufficientBalanceException extends DefaultException {
     public InsufficientBalanceException(String message) {
-        super(message);
+        super("INSUFFICIENT_BALANCE", message, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 }

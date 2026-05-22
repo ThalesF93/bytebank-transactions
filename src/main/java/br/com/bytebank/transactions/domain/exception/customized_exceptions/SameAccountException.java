@@ -1,8 +1,11 @@
 package br.com.bytebank.transactions.domain.exception.customized_exceptions;
 
-public class SameAccountException extends RuntimeException {
+import br.com.bytebank.transactions.domain.exception.default_exception.DefaultException;
+import org.springframework.http.HttpStatus;
+
+public class SameAccountException extends DefaultException {
     public SameAccountException(String message) {
-        super(message);
+        super("IDENTICAL_ACCOUNTS", message, HttpStatus.CONFLICT);
     }
 }
 

@@ -96,17 +96,17 @@ public class TransactionServiceImpl implements TransactionService {
         try {
             originAccount = accountClient.findAccount(dto.originAccountId());
         } catch (FeignException.NotFound e) {
-            throw new AccountNotFoundException("Origin account not found: " + dto.originAccountId());
+            throw new AccountNotFoundException(dto.originAccountId());
         }catch (FeignException e){
-            throw new AccountServiceUnavailableException("Account service unavailable");
+            throw new AccountServiceUnavailableException();
         }
 
         try {
             destinationAccount = accountClient.findAccount(dto.destinationAccountId());
         } catch (FeignException.NotFound e) {
-            throw new AccountNotFoundException ("Destination account not found: " + dto.destinationAccountId());
+            throw new AccountNotFoundException (dto.destinationAccountId());
         }catch (FeignException e){
-            throw new AccountServiceUnavailableException("Account service unavailable");
+            throw new AccountServiceUnavailableException();
         }
 
         Transaction transaction = createTransactionEntity(dto, OperationType.TRANSFER, TransactionStatus.PROCESSING);
@@ -129,7 +129,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public TransactionResponseDTO getTransactionById(UUID id) {
         var transaction = transactionRepository.findById(id).orElseThrow(
-                ()-> new TransactionException("Transaction not found. ID= " + id)
+                ()-> new TransactionException(id)
         );
         return new TransactionResponseDTO(id, transaction.getTargetAccountId(), transaction.getType(), transaction.getStatus(), transaction.getAmount(), null);
     }

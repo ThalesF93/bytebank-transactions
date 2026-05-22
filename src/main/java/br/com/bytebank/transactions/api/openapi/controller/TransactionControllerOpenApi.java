@@ -7,23 +7,104 @@ import br.com.bytebank.transactions.api.dtos.responses.BankStatementResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.DepositResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
-import jakarta.validation.Valid;
+import br.com.bytebank.transactions.domain.exception.dto.ErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.UUID;
 
+@Tag(name = "MS - Transactions")
 public interface TransactionControllerOpenApi {
 
-    ResponseEntity<DepositResponseDTO> deposit(@Valid @RequestBody DepositRequestDTO depositRequestDTO);
+    @Operation(summary = "Deposit",description = "Method responsible for deposit operation ")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Deposited successfully",
+                    content = @Content(schema = @Schema(implementation = DepositResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Invalid amount",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
 
-    ResponseEntity<WithdrawResponseDTO> withdraw(@Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO);
+    })
+    ResponseEntity<DepositResponseDTO> deposit(@RequestBody(description = "DTO to perform deposit", required = true) DepositRequestDTO depositRequestDTO);
 
-    ResponseEntity<TransactionResponseDTO> transference(@Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO);
+    @Operation(summary = "Withdraw",description = "Method responsible for withdraw operation ")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Withdraw successfully",
+                    content = @Content(schema = @Schema(implementation = WithdrawResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Invalid amount",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
 
-    ResponseEntity<List<BankStatementResponseDTO>> getStatement(@PathVariable UUID id);
+    })
+    ResponseEntity<WithdrawResponseDTO> withdraw(@RequestBody(description = "DTo to perform withdraw", required = true) WithdrawRequestDTO withdrawRequestDTO);
 
-    ResponseEntity<TransactionResponseDTO> getTransaction(@PathVariable UUID id);
+    @Operation(summary = "Transference",description = "Method responsible for Transference operation ")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Transference done successfully",
+                    content = @Content(schema = @Schema(implementation = TransactionResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Conflict between accounts",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "503",
+                    description = "Account service unavailable",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "503",
+                    description = "Service unavailable",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            )
+
+    })
+    ResponseEntity<TransactionResponseDTO> transference(@RequestBody(description = "DTo to perform transference", required = true) TransferenceRequestDTO transferenceRequestDTO);
+
+    @Operation(summary = "Show Statement",description = "Method responsible for return all the transactions of an account ")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Statement generated",
+                    content = @Content(schema = @Schema(implementation = BankStatementResponseDTO.class))
+            )
+    })
+    ResponseEntity<List<BankStatementResponseDTO>> getStatement(@Parameter(description = "Id to find account to generate statement", required = true) UUID id);
+
+    @Operation(summary = "Find Transaction",description = "Method responsible for find specific transaction ")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Transaction found",
+                    content = @Content(schema = @Schema(implementation = TransactionResponseDTO.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Transaction not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+
+    })
+    ResponseEntity<TransactionResponseDTO> getTransaction(@Parameter(description = "Id to find a transaction", required = true) UUID id);
 }

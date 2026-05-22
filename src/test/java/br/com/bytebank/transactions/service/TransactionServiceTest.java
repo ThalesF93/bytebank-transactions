@@ -208,7 +208,7 @@ public class TransactionServiceTest {
 
         assertThatExceptionOfType(TransactionException.class)
                 .isThrownBy(() -> transactionService.getTransactionById(id))
-                .withMessage("Transaction not found. ID= " + id);
+                .withMessage(String.format("Transaction with id %s not found", id));
 
         verify(transactionRepository).findById(id);
     }
@@ -275,11 +275,11 @@ public class TransactionServiceTest {
                 idOriginAccount, idTargetAccount, value
         );
         when(accountClient.findAccount(idOriginAccount))
-                .thenThrow(new AccountNotFoundException("Origin account not found: " + idOriginAccount));
+                .thenThrow(new AccountNotFoundException(idOriginAccount));
 
         assertThatExceptionOfType(AccountNotFoundException.class)
                 .isThrownBy(() -> transactionService.transference(requestDTO))
-                .withMessage("Origin account not found: " + requestDTO.originAccountId());
+                .withMessage(String.format("Account with id %s not found", requestDTO.originAccountId()));
 
         verify(accountClient).findAccount(idOriginAccount);
         verify(accountClient, never()).findAccount(idTargetAccount);
@@ -303,11 +303,11 @@ public class TransactionServiceTest {
 
         when(accountClient.findAccount(idOriginAccount)).thenReturn(originAccount);
         when(accountClient.findAccount(idTargetAccount))
-                .thenThrow(new AccountNotFoundException("Destination account not found: " + idTargetAccount));
+                .thenThrow(new AccountNotFoundException(idTargetAccount));
 
         assertThatExceptionOfType(AccountNotFoundException.class)
                 .isThrownBy(() -> transactionService.transference(requestDTO))
-                .withMessage("Destination account not found: " + idTargetAccount);
+                .withMessage(String.format("Account with id %s not found", idTargetAccount));
 
         verify(accountClient).findAccount(idOriginAccount);
         verify(accountClient).findAccount(idTargetAccount);

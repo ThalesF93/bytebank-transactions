@@ -1,7 +1,10 @@
 package br.com.bytebank.transactions.domain.exception.customized_exceptions;
 
-public class ResourceNotFoundException extends RuntimeException {
+import br.com.bytebank.transactions.domain.exception.default_exception.DefaultException;
+import org.springframework.http.HttpStatus;
+
+public class ResourceNotFoundException extends DefaultException {
     public ResourceNotFoundException(String message) {
-        super(message);
+        super("RESOURCE_NOT_FOUND", message, HttpStatus.NOT_FOUND);
     }
 }
