@@ -37,6 +37,7 @@ spring:
 server:
   port: 8083
   shutdown: graceful
+  address: 0.0.0.0
 
 resilience4j:
   circuitbreaker:
@@ -53,7 +54,9 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_DEFAULT_ZONE}
   instance:
-    prefer-ip-address: true
+    hostname: ${HOSTNAME}
+    prefer-ip-address: false
+    instance-id: ${spring.application.name}:${HOSTNAME}
 
 logging:
   structured:
@@ -73,3 +76,9 @@ management:
   zipkin:
     tracing:
       endpoint: ${ZIPKIN_ENDPOINT}
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: false
