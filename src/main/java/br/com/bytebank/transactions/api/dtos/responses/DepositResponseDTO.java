@@ -14,16 +14,16 @@ public record DepositResponseDTO(
         @Schema(description = "Account thas has been credited a value")
         UUID originId,
 
-        @Schema(description = "The Operation type", example = "Deposit")
+        @Schema(description = "The Operation type")
         OperationType type,
 
         @Schema(description = "The value of deposit")
         BigDecimal amount,
 
-        @Schema(description = "The current status", example = "PENDING")
+        @Schema(description = "The current status")
         TransactionStatus status,
 
-        @Schema(description = "A message for the user", example = "Deposited successfully")
+        @Schema(description = "A message for the user")
         String message
 ) {
 

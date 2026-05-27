@@ -7,19 +7,19 @@ import java.time.Instant;
 @Schema(description = "API Pattern for Errors")
 public record ErrorResponse(
 
-        @Schema(description = "Internal Message Error", example = "CUSTOMER_NOT_FOUND")
+        @Schema(description = "Internal Message Error")
         String code,
 
-        @Schema(description = "Message describing the error", example = "Customer João not found")
+        @Schema(description = "Message describing the error")
         String message,
 
-        @Schema(description = "HTTP status code", example = "404")
+        @Schema(description = "HTTP status code")
         int status,
 
-        @Schema(description = "Source Endpoint", example = "/api/customers/42")
+        @Schema(description = "Source Endpoint")
         String path,
 
-        @Schema(description = "Occurred time", example = "2026-05-20T18:00:00Z")
+        @Schema(description = "Occurred time")
         Instant timestamp
 ) {
     public static ErrorResponse of(String code, String message, int status, String path) {

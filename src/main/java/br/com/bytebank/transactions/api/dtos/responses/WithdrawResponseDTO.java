@@ -14,16 +14,16 @@ public record WithdrawResponseDTO(
         @Schema(description = "Account thas has been debited a value")
         UUID originId,
 
-        @Schema(description = "The Operation type", example = "Withdraw")
+        @Schema(description = "The Operation type")
         OperationType type,
 
         @Schema(description = "The value of withdraw")
         BigDecimal amount,
 
-        @Schema(description = "The current status", example = "PENDING")
+        @Schema(description = "The current status")
         TransactionStatus status,
 
-        @Schema(description = "A message for the user", example = "Withdraw successfully done!")
+        @Schema(description = "A message for the user")
         String message
 ) {
     public static WithdrawResponseDTO response(Transaction transaction){

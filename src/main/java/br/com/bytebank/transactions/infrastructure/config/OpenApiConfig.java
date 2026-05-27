@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 
 @OpenAPIDefinition(
         servers = {
-                @Server(url = "http://localhost:8080", description = "Gateway")
+                @Server(url = "/", description = "Default Server URL")
         }
 )
 @Configuration

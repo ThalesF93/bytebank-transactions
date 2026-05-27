@@ -22,13 +22,13 @@ public record TransactionResponseDTO(
         @Schema(description = "The type of the operation", example = "TRANSFERENCE")
         OperationType type,
 
-        @Schema(description = "The current status", example = "PROCESSING")
+        @Schema(description = "The current status")
         TransactionStatus status,
 
         @Schema(description = "The value of withdraw")
         BigDecimal amount,
 
-        @Schema(description = "A message for the user", example = "Transference is pending, please wait.")
+        @Schema(description = "A message for the user")
         String message
 
 ) {

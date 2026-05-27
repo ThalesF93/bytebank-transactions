@@ -18,10 +18,10 @@ public record BankStatementResponseDTO(
         @Schema(description = "In case of transference, it will inform the target account id")
         UUID targetId,
 
-        @Schema(description = "The type os transaction", example = "DEPOSIT")
+        @Schema(description = "The type os transaction")
         OperationType type,
 
-        @Schema(description = "What is the current status of the operation", example = "COMPLETED")
+        @Schema(description = "What is the current status of the operation")
         TransactionStatus status,
 
         @Schema(description = "The value of the specific transaction")
