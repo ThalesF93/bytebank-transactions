@@ -61,3 +61,10 @@ management:
   zipkin:
     tracing:
       endpoint: http://zipkin:9411/api/v2/spans
+bytebank:
+  transactions:
+    retry:
+      max-attempts: 5
+      deposit-delay-ms: 300000 #  5 minutes
+      withdraw-delay-ms: 60000 # 1 minute
+      transfer-delay-ms: 60000 # 1 minute
