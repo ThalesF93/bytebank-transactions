@@ -34,7 +34,7 @@ public class TransactionController implements TransactionControllerOpenApi {
     @PostMapping("/deposit")
     public ResponseEntity<DepositResponseDTO> deposit(
             @RequestHeader("Idempotency-Key") UUID idempotencyKey,
-            @Valid @RequestBody DepositRequestDTO depositRequestDTO) throws JsonProcessingException {
+            @Valid @RequestBody DepositRequestDTO depositRequestDTO) {
 
         log.info("Request received. endpoint=POST /deposit value={}",depositRequestDTO.amount());
 
@@ -48,7 +48,7 @@ public class TransactionController implements TransactionControllerOpenApi {
     @PostMapping("/withdraw")
     public ResponseEntity<WithdrawResponseDTO> withdraw(
             @RequestHeader("Idempotency-Key") UUID idempotencyKey,
-            @Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO) throws JsonProcessingException {
+            @Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO)  {
 
         log.info("Request received. endpoint=POST /withdraw value={}",withdrawRequestDTO.amount());
 
@@ -62,7 +62,7 @@ public class TransactionController implements TransactionControllerOpenApi {
     @PostMapping("/transference")
     public ResponseEntity<TransactionResponseDTO> transference(
             @RequestHeader("Idempotency-Key") UUID idempotencyKey,
-            @Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO) throws JsonProcessingException {
+            @Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO)  {
         log.info("Transference request received. endpoint=POST  value={}",transferenceRequestDTO.amount());
         var transference = transactionService.transference(idempotencyKey ,transferenceRequestDTO);
         log.info("Transference done successfully. value={}",transferenceRequestDTO.amount());

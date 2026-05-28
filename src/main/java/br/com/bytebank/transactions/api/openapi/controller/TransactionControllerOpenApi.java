@@ -41,8 +41,11 @@ public interface TransactionControllerOpenApi {
 
     })
     ResponseEntity<DepositResponseDTO> deposit(
-            @RequestHeader(value = "Idempotency-Key") UUID idempotencyKey ,
-            @RequestBody(description = "DTO to perform deposit", required = true) DepositRequestDTO depositRequestDTO) throws JsonProcessingException;
+            @Parameter(
+                    description = "Unique key to ensure idempotency of the request",
+                    required = true
+            )  UUID idempotencyKey ,
+            @RequestBody(description = "DTO to perform deposit", required = true) DepositRequestDTO depositRequestDTO);
 
     @Operation(summary = "Withdraw",description = "Method responsible for withdraw operation ")
     @ApiResponses({
@@ -59,8 +62,11 @@ public interface TransactionControllerOpenApi {
 
     })
     ResponseEntity<WithdrawResponseDTO> withdraw(
-            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
-            @RequestBody(description = "DTo to perform withdraw", required = true) WithdrawRequestDTO withdrawRequestDTO) throws JsonProcessingException;
+            @Parameter(
+                    description = "Unique key to ensure idempotency of the request",
+                    required = true
+            )  UUID idempotencyKey,
+            @RequestBody(description = "DTo to perform withdraw", required = true) WithdrawRequestDTO withdrawRequestDTO);
 
     @Operation(summary = "Transference",description = "Method responsible for Transference operation ")
     @ApiResponses({
@@ -87,8 +93,11 @@ public interface TransactionControllerOpenApi {
 
     })
     ResponseEntity<TransactionResponseDTO> transference(
-            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
-            @RequestBody(description = "DTo to perform transference", required = true) TransferenceRequestDTO transferenceRequestDTO) throws JsonProcessingException;
+            @Parameter(
+                    description = "Unique key to ensure idempotency of the request",
+                    required = true
+            )  UUID idempotencyKey,
+            @RequestBody(description = "DTo to perform transference", required = true) TransferenceRequestDTO transferenceRequestDTO) ;
 
     @Operation(summary = "Show Statement",description = "Method responsible for return all the transactions of an account ")
     @ApiResponses({

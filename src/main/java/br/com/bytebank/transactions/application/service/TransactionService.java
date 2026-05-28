@@ -16,11 +16,11 @@ import java.util.UUID;
 
 public interface TransactionService {
 
-    WithdrawResponseDTO withdraw(UUID idempotencyKey , WithdrawRequestDTO requestDTO) throws JsonProcessingException;
+    WithdrawResponseDTO withdraw(UUID idempotencyKey , WithdrawRequestDTO requestDTO);
 
-    DepositResponseDTO deposit(UUID idempotencyKey ,DepositRequestDTO requestDTO) throws JsonProcessingException;
+    DepositResponseDTO deposit(UUID idempotencyKey ,DepositRequestDTO requestDTO);
 
-    TransactionResponseDTO transference(UUID idempotencyKey , TransferenceRequestDTO dto) throws JsonProcessingException;
+    TransactionResponseDTO transference(UUID idempotencyKey , TransferenceRequestDTO dto) ;
 
     List<BankStatementResponseDTO> generateBankStatement(UUID id);
 

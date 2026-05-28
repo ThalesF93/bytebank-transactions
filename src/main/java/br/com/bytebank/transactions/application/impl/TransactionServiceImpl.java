@@ -36,6 +36,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static br.com.bytebank.transactions.domain.exception.customized_exceptions.IdempotencyCacheException.Operation.DESERIALIZE;
+import static br.com.bytebank.transactions.domain.exception.customized_exceptions.IdempotencyCacheException.Operation.SERIALIZE;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -50,15 +53,16 @@ public class TransactionServiceImpl implements TransactionService {
 
 
     @Override
-    public WithdrawResponseDTO withdraw(UUID idempotencyKey, WithdrawRequestDTO requestDTO) throws JsonProcessingException {
+    public WithdrawResponseDTO withdraw(UUID idempotencyKey, WithdrawRequestDTO requestDTO) {
+
         amountValidation(requestDTO.amount());
 
-        String cacheKey = "idempotency:deposit:" + idempotencyKey;
+        String cacheKey = "idempotency:withdraw:" + idempotencyKey;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
 
         if (cached != null) {
             log.info("Duplicate withdraw detected. idempotencyKey={}", idempotencyKey);
-            return objectMapper.readValue(cached.toString(), WithdrawResponseDTO.class);
+            return fromIdempotencyCache(cacheKey, WithdrawResponseDTO.class);
         }
 
         Transaction transaction = createTransactionEntity(requestDTO, OperationType.WITHDRAW, TransactionStatus.PROCESSING);
@@ -75,12 +79,18 @@ public class TransactionServiceImpl implements TransactionService {
             PendingTransaction pendingTransaction = createPendingTransaction(transaction, FailureReason.DEBIT_FAILED);
             pendingTransactionRepository.save(pendingTransaction);
         }
-        return WithdrawResponseDTO.response(transaction);
+
+        var response = WithdrawResponseDTO.response(transaction);
+
+        toIdempotencyCache(cacheKey, response);
+
+        return response;
+
     }
 
 
     @Override
-    public DepositResponseDTO deposit(UUID idempotencyKey, DepositRequestDTO requestDTO) throws JsonProcessingException {
+    public DepositResponseDTO deposit(UUID idempotencyKey, DepositRequestDTO requestDTO) {
         amountValidation(requestDTO.amount());
 
         String cacheKey = "idempotency:deposit:" + idempotencyKey;
@@ -88,7 +98,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         if (cached != null) {
             log.info("Duplicate deposit detected. idempotencyKey={}", idempotencyKey);
-            return objectMapper.readValue(cached.toString(), DepositResponseDTO.class);
+            return fromIdempotencyCache(cacheKey, DepositResponseDTO.class);
         }
 
         Transaction transaction = createTransactionEntity(requestDTO, OperationType.DEPOSIT, TransactionStatus.PROCESSING);
@@ -107,24 +117,20 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         var response = DepositResponseDTO.response(transaction);
-        redisTemplate.opsForValue().set(
-                cacheKey,
-                objectMapper.writeValueAsString(response),
-                Duration.ofHours(24)
-        );
+        toIdempotencyCache(cacheKey, response);
 
         return response;
     }
 
     @Override
-    public TransactionResponseDTO transference(UUID idempotencyKey, TransferenceRequestDTO dto) throws JsonProcessingException {
+    public TransactionResponseDTO transference(UUID idempotencyKey, TransferenceRequestDTO dto)  {
 
-        String cacheKey = "idempotency:deposit:" + idempotencyKey;
+        String cacheKey = "idempotency:transference:" + idempotencyKey;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
 
         if (cached != null) {
             log.info("Duplicate transference detected. idempotencyKey={}", idempotencyKey);
-            return objectMapper.readValue(cached.toString(), TransactionResponseDTO.class);
+            return fromIdempotencyCache(cacheKey, TransactionResponseDTO.class);
         }
 
         validatingTransference(dto);
@@ -132,28 +138,21 @@ public class TransactionServiceImpl implements TransactionService {
         AccountResponseDTO originAccount;
         AccountResponseDTO destinationAccount;
 
-        try {
-            originAccount = accountClient.findAccount(dto.originAccountId());
-        } catch (FeignException.NotFound e) {
-            throw new AccountNotFoundException(dto.originAccountId());
-        }catch (FeignException e){
-            throw new AccountServiceUnavailableException();
-        }
-
-        try {
-            destinationAccount = accountClient.findAccount(dto.destinationAccountId());
-        } catch (FeignException.NotFound e) {
-            throw new AccountNotFoundException (dto.destinationAccountId());
-        }catch (FeignException e){
-            throw new AccountServiceUnavailableException();
-        }
+        originAccount = getAccountForTransaction(dto.originAccountId());
+        destinationAccount = getAccountForTransaction(dto.destinationAccountId());
 
         Transaction transaction = createTransactionEntity(dto, OperationType.TRANSFER, TransactionStatus.PROCESSING);
         transaction.setTargetAccountId(dto.destinationAccountId());
         transactionRepository.save(transaction);
 
-       return executeTransfer(transaction, dto, originAccount, destinationAccount);
+        var response = executeTransfer(transaction, dto, originAccount, destinationAccount);
+
+        toIdempotencyCache(cacheKey, response);
+
+        return response;
     }
+
+
 
     @Transactional(readOnly = true)
     @Override
@@ -262,5 +261,33 @@ public class TransactionServiceImpl implements TransactionService {
         return TransactionResponseDTO.transferencePendingResponse(transaction);
     }
 
+    private void toIdempotencyCache(String cacheKey, Object value) {
+        try {
+            redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(value), Duration.ofHours(24));
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize idempotency response. type={}", value.getClass().getSimpleName(), e);
+            throw new IdempotencyCacheException(SERIALIZE);
+        }
+    }
 
+    private <T> T fromIdempotencyCache(Object value, Class<T> clazz) {
+        try {
+            return objectMapper.readValue(value.toString(), clazz);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to deserialize idempotency response. type={}", clazz.getSimpleName(), e);
+            throw new IdempotencyCacheException(DESERIALIZE);
+        }
+    }
+
+    private AccountResponseDTO getAccountForTransaction(UUID uuid) {
+        AccountResponseDTO account;
+        try {
+            account = accountClient.findAccount(uuid);
+        } catch (FeignException.NotFound e) {
+            throw new AccountNotFoundException(uuid);
+        }catch (FeignException e){
+            throw new AccountServiceUnavailableException();
+        }
+        return account;
+    }
 }
