@@ -7,18 +7,20 @@ import br.com.bytebank.transactions.api.dtos.responses.BankStatementResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.DepositResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.math.BigDecimal;
+import java.rmi.server.UID;
 import java.util.List;
 import java.util.UUID;
 
 public interface TransactionService {
 
-    WithdrawResponseDTO withdraw(WithdrawRequestDTO requestDTO);
+    WithdrawResponseDTO withdraw(UUID idempotencyKey , WithdrawRequestDTO requestDTO) throws JsonProcessingException;
 
-    DepositResponseDTO deposit(DepositRequestDTO requestDTO);
+    DepositResponseDTO deposit(UUID idempotencyKey ,DepositRequestDTO requestDTO) throws JsonProcessingException;
 
-    TransactionResponseDTO transference(TransferenceRequestDTO dto);
+    TransactionResponseDTO transference(UUID idempotencyKey , TransferenceRequestDTO dto) throws JsonProcessingException;
 
     List<BankStatementResponseDTO> generateBankStatement(UUID id);
 

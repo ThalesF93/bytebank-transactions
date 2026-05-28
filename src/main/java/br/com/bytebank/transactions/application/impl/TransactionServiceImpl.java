@@ -1,5 +1,6 @@
 package br.com.bytebank.transactions.application.impl;
 
+import br.com.bytebank.transactions.api.dtos.client.responses.AccountResponseDTO;
 import br.com.bytebank.transactions.api.dtos.requests.AccountOperationRequest;
 import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.TransferenceRequestDTO;
@@ -16,18 +17,21 @@ import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.exception.customized_exceptions.*;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
-import br.com.bytebank.transactions.api.dtos.client.responses.AccountResponseDTO;
 import br.com.bytebank.transactions.infrastructure.messaging.TransactionEventPublisher;
 import br.com.bytebank.transactions.infrastructure.repositories.PendingTransactionRepository;
 import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -41,11 +45,21 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountClient accountClient;
     private final TransactionEventPublisher eventPublisher;
+    private final ObjectMapper objectMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
 
 
-    public WithdrawResponseDTO withdraw(WithdrawRequestDTO requestDTO){
-
+    @Override
+    public WithdrawResponseDTO withdraw(UUID idempotencyKey, WithdrawRequestDTO requestDTO) throws JsonProcessingException {
         amountValidation(requestDTO.amount());
+
+        String cacheKey = "idempotency:deposit:" + idempotencyKey;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+
+        if (cached != null) {
+            log.info("Duplicate withdraw detected. idempotencyKey={}", idempotencyKey);
+            return objectMapper.readValue(cached.toString(), WithdrawResponseDTO.class);
+        }
 
         Transaction transaction = createTransactionEntity(requestDTO, OperationType.WITHDRAW, TransactionStatus.PROCESSING);
         transactionRepository.save(transaction);
@@ -65,9 +79,17 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
 
-    public DepositResponseDTO deposit(DepositRequestDTO requestDTO){
-
+    @Override
+    public DepositResponseDTO deposit(UUID idempotencyKey, DepositRequestDTO requestDTO) throws JsonProcessingException {
         amountValidation(requestDTO.amount());
+
+        String cacheKey = "idempotency:deposit:" + idempotencyKey;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+
+        if (cached != null) {
+            log.info("Duplicate deposit detected. idempotencyKey={}", idempotencyKey);
+            return objectMapper.readValue(cached.toString(), DepositResponseDTO.class);
+        }
 
         Transaction transaction = createTransactionEntity(requestDTO, OperationType.DEPOSIT, TransactionStatus.PROCESSING);
         transactionRepository.save(transaction);
@@ -79,15 +101,32 @@ public class TransactionServiceImpl implements TransactionService {
             transactionRepository.save(transaction);
 
         } catch (FeignException e) {
+            transaction.setStatus(TransactionStatus.PENDING);
             PendingTransaction pendingTransaction = createPendingTransaction(transaction, FailureReason.CREDIT_FAILED);
             pendingTransactionRepository.save(pendingTransaction);
         }
 
-        return DepositResponseDTO.response(transaction);
+        var response = DepositResponseDTO.response(transaction);
+        redisTemplate.opsForValue().set(
+                cacheKey,
+                objectMapper.writeValueAsString(response),
+                Duration.ofHours(24)
+        );
+
+        return response;
     }
 
     @Override
-    public TransactionResponseDTO transference(TransferenceRequestDTO dto){
+    public TransactionResponseDTO transference(UUID idempotencyKey, TransferenceRequestDTO dto) throws JsonProcessingException {
+
+        String cacheKey = "idempotency:deposit:" + idempotencyKey;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+
+        if (cached != null) {
+            log.info("Duplicate transference detected. idempotencyKey={}", idempotencyKey);
+            return objectMapper.readValue(cached.toString(), TransactionResponseDTO.class);
+        }
+
         validatingTransference(dto);
 
         AccountResponseDTO originAccount;

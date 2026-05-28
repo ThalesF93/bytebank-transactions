@@ -8,6 +8,7 @@ import br.com.bytebank.transactions.api.dtos.responses.DepositResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
 import br.com.bytebank.transactions.domain.exception.dto.ErrorResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,7 +40,9 @@ public interface TransactionControllerOpenApi {
             )
 
     })
-    ResponseEntity<DepositResponseDTO> deposit(@RequestBody(description = "DTO to perform deposit", required = true) DepositRequestDTO depositRequestDTO);
+    ResponseEntity<DepositResponseDTO> deposit(
+            @RequestHeader(value = "Idempotency-Key") UUID idempotencyKey ,
+            @RequestBody(description = "DTO to perform deposit", required = true) DepositRequestDTO depositRequestDTO) throws JsonProcessingException;
 
     @Operation(summary = "Withdraw",description = "Method responsible for withdraw operation ")
     @ApiResponses({
@@ -54,7 +58,9 @@ public interface TransactionControllerOpenApi {
             )
 
     })
-    ResponseEntity<WithdrawResponseDTO> withdraw(@RequestBody(description = "DTo to perform withdraw", required = true) WithdrawRequestDTO withdrawRequestDTO);
+    ResponseEntity<WithdrawResponseDTO> withdraw(
+            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
+            @RequestBody(description = "DTo to perform withdraw", required = true) WithdrawRequestDTO withdrawRequestDTO) throws JsonProcessingException;
 
     @Operation(summary = "Transference",description = "Method responsible for Transference operation ")
     @ApiResponses({
@@ -80,7 +86,9 @@ public interface TransactionControllerOpenApi {
             )
 
     })
-    ResponseEntity<TransactionResponseDTO> transference(@RequestBody(description = "DTo to perform transference", required = true) TransferenceRequestDTO transferenceRequestDTO);
+    ResponseEntity<TransactionResponseDTO> transference(
+            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
+            @RequestBody(description = "DTo to perform transference", required = true) TransferenceRequestDTO transferenceRequestDTO) throws JsonProcessingException;
 
     @Operation(summary = "Show Statement",description = "Method responsible for return all the transactions of an account ")
     @ApiResponses({

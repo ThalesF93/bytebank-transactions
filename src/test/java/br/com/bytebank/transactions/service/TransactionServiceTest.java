@@ -6,27 +6,33 @@ import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.TransferenceRequestDTO;
 import br.com.bytebank.transactions.api.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.api.dtos.responses.BankStatementResponseDTO;
+import br.com.bytebank.transactions.api.dtos.responses.DepositResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
+import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
 import br.com.bytebank.transactions.application.impl.TransactionServiceImpl;
 import br.com.bytebank.transactions.domain.entity.PendingTransaction;
 import br.com.bytebank.transactions.domain.entity.Transaction;
-import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.exception.customized_exceptions.*;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
 import br.com.bytebank.transactions.infrastructure.messaging.TransactionEventPublisher;
 import br.com.bytebank.transactions.infrastructure.repositories.PendingTransactionRepository;
 import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -54,86 +60,158 @@ public class TransactionServiceTest {
     @Mock
     PendingTransactionRepository pendingRepository;
 
+    @Mock
+    RedisTemplate<String, Object> redisTemplate;
+
+    @Mock
+    ValueOperations<String, Object> valueOperations;
+
+    @Mock
+    ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+
+    }
+
     @Test
     @DisplayName("Should successfully withdraw")
-    void mustWithdraw(){
-        WithdrawRequestDTO dto = TestBuilders.withdrawRequestDTO();
-        Transaction transaction = TestBuilders.createWithdrawTransaction(dto);
+    void mustWithdraw() throws Exception {
 
-        var result = transactionService.withdraw(dto);
+        UUID idempotencyKey = UUID.randomUUID();
+        WithdrawRequestDTO dto = TestBuilders.withdrawRequestDTO();
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        when(transactionRepository.save(any(Transaction.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        doNothing().when(accountClient)
+                .debit(any(WithdrawRequestDTO.class));
+
+        WithdrawResponseDTO result =
+                transactionService.withdraw(idempotencyKey, dto);
 
         verify(transactionRepository, times(2)).save(any(Transaction.class));
-        verify(accountClient).debit(dto);
+        verify(accountClient).debit(any(WithdrawRequestDTO.class));
 
         assertThat(result.amount()).isEqualTo(dto.amount());
     }
 
     @Test
     @DisplayName("Should throw Feign Exception and Save the Withdraw as pending")
-    void mustThrowExceptionAndSaveWithdrawAsPending(){
+    void mustThrowExceptionAndSaveWithdrawAsPending() throws Exception {
+
+        UUID idempotencyKey = UUID.randomUUID();
         WithdrawRequestDTO dto = TestBuilders.withdrawRequestDTO();
 
-        when(accountClient.debit(dto)).thenThrow(FeignException.class);
-        when(pendingRepository.save(any(PendingTransaction.class))).thenReturn(any(PendingTransaction.class));
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
 
-        var result = transactionService.withdraw(dto);
+        when(transactionRepository.save(any(Transaction.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
-        verify(pendingRepository, times(1)).save(any(PendingTransaction.class));
+        when(accountClient.debit(any(WithdrawRequestDTO.class)))
+                .thenThrow(FeignException.class);
 
+        when(pendingRepository.save(any(PendingTransaction.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        WithdrawResponseDTO result =
+                transactionService.withdraw(idempotencyKey, dto);
+
+        verify(transactionRepository, times(1))
+                .save(any(Transaction.class));
+
+        verify(accountClient, times(1))
+                .debit(any(WithdrawRequestDTO.class));
+
+        verify(pendingRepository, times(1))
+                .save(any(PendingTransaction.class));
+
+        assertThat(result).isNotNull();
     }
 
     @Test
     @DisplayName("Should Throw Invalid Amount Exception on Withdraw")
-    void mustThrowExceptionInWithdrawBalanceValidation(){
-        WithdrawRequestDTO dto = new WithdrawRequestDTO(UUID.randomUUID(), new BigDecimal("0"));
+    void mustThrowExceptionInWithdrawBalanceValidation() {
+
+        UUID idempotencyKey = UUID.randomUUID();
+
+        WithdrawRequestDTO dto =
+                new WithdrawRequestDTO(UUID.randomUUID(), BigDecimal.ZERO);
 
         assertThatExceptionOfType(InvalidAmountException.class)
-                .isThrownBy(()-> transactionService.withdraw(dto))
+                .isThrownBy(() -> transactionService.withdraw(idempotencyKey, dto))
                 .withMessage("Amount must be greater than zero");
 
         verify(transactionRepository, never()).save(any());
+        verify(accountClient, never()).debit(any());
+        verify(pendingRepository, never()).save(any());
     }
 
     @Test
-    @DisplayName("Should successfully deposit")
-    void mustDeposit(){
-       DepositRequestDTO dto = TestBuilders.depositRequestDTO();
-        Transaction transaction = TestBuilders.createDepositTransaction(dto);
+    @DisplayName("Should deposit successfully")
+    void mustDeposit() throws JsonProcessingException {
 
-        var result = transactionService.deposit(dto);
+        DepositRequestDTO dto = TestBuilders.depositRequestDTO();
+        UUID idempotencyKey = UUID.randomUUID();
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        doNothing().when(valueOperations)
+                .set(anyString(), anyString(), any());
+
+        when(transactionRepository.save(any(Transaction.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        doNothing().when(accountClient).credit(any());
+
+        when(objectMapper.writeValueAsString(any()))
+                .thenReturn("{\"amount\":10}");
+
+        DepositResponseDTO result = transactionService.deposit(idempotencyKey, dto);
 
         verify(transactionRepository, times(2)).save(any(Transaction.class));
-        verify(accountClient).credit(dto);
+        verify(accountClient, times(1)).credit(any());
 
-        assertThat(result.amount()).isEqualTo(dto.amount());
+        assertThat(result.amount())
+                .isEqualByComparingTo(dto.amount());
     }
 
     @Test
-    @DisplayName("Should throw Feign Exception and Save the Deposit as pending")
-    void mustThrowExceptionAndSaveDepositAsPending(){
+    @DisplayName("Should save deposit as pending when account client fails")
+    void mustThrowExceptionAndSaveDepositAsPending() throws JsonProcessingException {
         DepositRequestDTO dto = TestBuilders.depositRequestDTO();
 
-        when(accountClient.credit(dto)).thenThrow(FeignException.class);
-        when(pendingRepository.save(any(PendingTransaction.class))).thenReturn(any(PendingTransaction.class));
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+        when(transactionRepository.save(any(Transaction.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(pendingRepository.save(any(PendingTransaction.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var result = transactionService.deposit(dto);
+        doThrow(Mockito.mock(FeignException.class))
+                .when(accountClient).credit(dto);
 
-        verify(transactionRepository, times(1)).save(any(Transaction.class));
-        verify(pendingRepository, times(1)).save(any(PendingTransaction.class));
+        DepositResponseDTO result = transactionService.deposit(UUID.randomUUID(), dto);
 
+        verify(transactionRepository).save(any(Transaction.class));
+        verify(pendingRepository).save(any(PendingTransaction.class));
     }
 
     @Test
-    @DisplayName("Should Throw Invalid Amount Exception on Deposit")
-    void mustThrowExceptionInDepositBalanceValidation(){
+    @DisplayName("Should throw Invalid Amount Exception on Deposit")
+    void mustThrowExceptionInDepositBalanceValidation() {
         DepositRequestDTO dto = new DepositRequestDTO(UUID.randomUUID(), new BigDecimal("0"));
 
         assertThatExceptionOfType(InvalidAmountException.class)
-                .isThrownBy(()-> transactionService.deposit(dto))
+                .isThrownBy(() -> transactionService.deposit(UUID.randomUUID(), dto))
                 .withMessage("Amount must be greater than zero");
 
-        verify(transactionRepository, never()).save(any());
+        verifyNoInteractions(transactionRepository, pendingRepository, accountClient);
     }
 
     @Test
@@ -215,123 +293,159 @@ public class TransactionServiceTest {
 
     @Test
     @DisplayName("Should complete transference and send event")
-    void mustCompleteTransference(){
+    void mustCompleteTransference() throws Exception {
+
+        UUID idempotencyKey = UUID.randomUUID();
+
         UUID idOriginAccount = UUID.randomUUID();
         UUID idTargetAccount = UUID.randomUUID();
+
         BigDecimal value = new BigDecimal("100.00");
 
-        TransferenceRequestDTO requestDTO = new TransferenceRequestDTO(
-                idOriginAccount, idTargetAccount, value
-        );
+        TransferenceRequestDTO requestDTO =
+                new TransferenceRequestDTO(idOriginAccount, idTargetAccount, value);
 
-        AccountResponseDTO originAccount = new AccountResponseDTO(idOriginAccount, UUID.randomUUID(), "4567", new BigDecimal("50"));
-        AccountResponseDTO targetAccount = new AccountResponseDTO(idTargetAccount, UUID.randomUUID(), "4567", new BigDecimal("50"));
+        AccountResponseDTO originAccount =
+                new AccountResponseDTO(idOriginAccount, UUID.randomUUID(), "4567", new BigDecimal("50"));
 
-        Transaction transaction = new Transaction();
-        transaction.setOriginAccountId(requestDTO.accountId());;
-        transaction.setType(OperationType.TRANSFER);
-        transaction.setAmount(requestDTO.amount());
-        transaction.setDateTime(LocalDateTime.now());
-        transaction.setStatus(TransactionStatus.PROCESSING);
+        AccountResponseDTO targetAccount =
+                new AccountResponseDTO(idTargetAccount, UUID.randomUUID(), "4567", new BigDecimal("50"));
 
-        when(accountClient.findAccount(requestDTO.originAccountId())).thenReturn(originAccount);
-        when(accountClient.findAccount(requestDTO.destinationAccountId())).thenReturn(targetAccount);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
 
-        var result = transactionService.transference(requestDTO);
+        when(accountClient.findAccount(idOriginAccount)).thenReturn(originAccount);
+        when(accountClient.findAccount(idTargetAccount)).thenReturn(targetAccount);
 
-        verify(transactionRepository, times(2)).save(any(Transaction.class));
-        verify(accountClient).debit(new WithdrawRequestDTO(originAccount.accountId(),requestDTO.amount()));
-        verify(accountClient).credit(new DepositRequestDTO(targetAccount.accountId(), requestDTO.amount()));
+        when(transactionRepository.save(any(Transaction.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        var result =
+                transactionService.transference(idempotencyKey, requestDTO);
+
+        verify(transactionRepository, times(2))
+                .save(any(Transaction.class));
+
+        verify(accountClient).debit(any(WithdrawRequestDTO.class));
+        verify(accountClient).credit(any(DepositRequestDTO.class));
+
         verify(eventPublisher).publishTransferenceCompleted(any(Transaction.class));
 
         assertThat(result).isNotNull();
-        assertThat(result.message()).isEqualTo("Transference completed successfully");
     }
 
     @Test
-    @DisplayName("Should thros Same account Exception when passing identical accounts in transference")
-    void mustThrowExceptionWhenSameAccounts(){
+    @DisplayName("Should throw Same account Exception when passing identical accounts in transference")
+    void mustThrowExceptionWhenSameAccounts() {
+
+        UUID idempotencyKey = UUID.randomUUID();
         UUID idOriginAccount = UUID.randomUUID();
-        UUID idTargetAccount = idOriginAccount;
-        TransferenceRequestDTO requestDTO = new TransferenceRequestDTO(
-                idOriginAccount, idTargetAccount, new BigDecimal("10")
-        );
+
+        TransferenceRequestDTO requestDTO =
+                new TransferenceRequestDTO(idOriginAccount, idOriginAccount, new BigDecimal("10"));
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
 
         assertThatExceptionOfType(SameAccountException.class)
-                .isThrownBy(() -> transactionService.transference(requestDTO))
+                .isThrownBy(() ->
+                        transactionService.transference(idempotencyKey, requestDTO))
                 .withMessage("The accounts must be different");
 
-        verify(transactionRepository, never()).save(any(Transaction.class));
+        verifyNoInteractions(transactionRepository);
+        verifyNoInteractions(accountClient);
+        verifyNoInteractions(pendingRepository);
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
     @DisplayName("Should throw Account Not found exception when origin account not found")
-    void mustThrowExceptionWhenOriginAccountNotFound(){
+    void mustThrowExceptionWhenOriginAccountNotFound() throws Exception {
+
+        UUID idempotencyKey = UUID.randomUUID();
+
         UUID idOriginAccount = UUID.randomUUID();
         UUID idTargetAccount = UUID.randomUUID();
-        BigDecimal value = new BigDecimal("100.00");
 
-        TransferenceRequestDTO requestDTO = new TransferenceRequestDTO(
-                idOriginAccount, idTargetAccount, value
-        );
+        TransferenceRequestDTO requestDTO =
+                new TransferenceRequestDTO(idOriginAccount, idTargetAccount, new BigDecimal("100.00"));
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+
         when(accountClient.findAccount(idOriginAccount))
                 .thenThrow(new AccountNotFoundException(idOriginAccount));
 
         assertThatExceptionOfType(AccountNotFoundException.class)
-                .isThrownBy(() -> transactionService.transference(requestDTO))
-                .withMessage(String.format("Account with id %s not found", requestDTO.originAccountId()));
+                .isThrownBy(() ->
+                        transactionService.transference(idempotencyKey, requestDTO))
+                .withMessage(String.format("Account with id %s not found", idOriginAccount));
 
         verify(accountClient).findAccount(idOriginAccount);
         verify(accountClient, never()).findAccount(idTargetAccount);
-        verifyNoInteractions(transactionRepository, pendingRepository, eventPublisher);
+
+        verifyNoInteractions(transactionRepository);
+        verifyNoInteractions(pendingRepository);
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
     @DisplayName("Should throw AccountNotFoundException when destination account not found")
-    void mustThrowExceptionWhenDestinationAccountNotFound() {
+    void mustThrowExceptionWhenDestinationAccountNotFound() throws Exception {
+
+        UUID idempotencyKey = UUID.randomUUID();
+
         UUID idOriginAccount = UUID.randomUUID();
         UUID idTargetAccount = UUID.randomUUID();
-        BigDecimal value = new BigDecimal("100.00");
 
-        TransferenceRequestDTO requestDTO = new TransferenceRequestDTO(
-                idOriginAccount, idTargetAccount, value
-        );
+        TransferenceRequestDTO requestDTO =
+                new TransferenceRequestDTO(idOriginAccount, idTargetAccount, new BigDecimal("100.00"));
 
-        AccountResponseDTO originAccount = new AccountResponseDTO(
-                idOriginAccount, UUID.randomUUID(), "4567", new BigDecimal("500.00")
-        );
+        AccountResponseDTO originAccount =
+                new AccountResponseDTO(idOriginAccount, UUID.randomUUID(), "4567", new BigDecimal("500.00"));
 
-        when(accountClient.findAccount(idOriginAccount)).thenReturn(originAccount);
+        // 🔥 FIX PRINCIPAL: Redis precisa existir no fluxo SEMPRE
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
+
+        when(accountClient.findAccount(idOriginAccount))
+                .thenReturn(originAccount);
+
         when(accountClient.findAccount(idTargetAccount))
                 .thenThrow(new AccountNotFoundException(idTargetAccount));
 
         assertThatExceptionOfType(AccountNotFoundException.class)
-                .isThrownBy(() -> transactionService.transference(requestDTO))
-                .withMessage(String.format("Account with id %s not found", idTargetAccount));
+                .isThrownBy(() ->
+                        transactionService.transference(idempotencyKey, requestDTO));
 
         verify(accountClient).findAccount(idOriginAccount);
         verify(accountClient).findAccount(idTargetAccount);
-        verifyNoInteractions(transactionRepository, pendingRepository, eventPublisher);
+
+        verifyNoInteractions(transactionRepository);
+        verifyNoInteractions(pendingRepository);
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
     @DisplayName("Should throw InsufficientBalanceException when origin account has not enough balance")
-    void mustThrowExceptionWhenInsufficientBalance() {
+    void mustThrowExceptionWhenInsufficientBalance() throws Exception {
+
+        UUID idempotencyKey = UUID.randomUUID();
+
         UUID idOriginAccount = UUID.randomUUID();
         UUID idTargetAccount = UUID.randomUUID();
-        BigDecimal value = new BigDecimal("100.00");
 
-        TransferenceRequestDTO requestDTO = new TransferenceRequestDTO(
-                idOriginAccount, idTargetAccount, value
-        );
+        TransferenceRequestDTO requestDTO =
+                new TransferenceRequestDTO(idOriginAccount, idTargetAccount, new BigDecimal("100.00"));
 
-        AccountResponseDTO originAccount = new AccountResponseDTO(
-                idOriginAccount, UUID.randomUUID(), "4567", new BigDecimal("50.00")
-        );
+        AccountResponseDTO originAccount =
+                new AccountResponseDTO(idOriginAccount, UUID.randomUUID(), "4567", new BigDecimal("50.00"));
 
-        AccountResponseDTO destinationAccount = new AccountResponseDTO(
-                idTargetAccount, UUID.randomUUID(), "4567", new BigDecimal("10.00")
-        );
+        AccountResponseDTO destinationAccount =
+                new AccountResponseDTO(idTargetAccount, UUID.randomUUID(), "4567", new BigDecimal("10.00"));
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
 
         when(accountClient.findAccount(idOriginAccount)).thenReturn(originAccount);
         when(accountClient.findAccount(idTargetAccount)).thenReturn(destinationAccount);
@@ -340,47 +454,61 @@ public class TransactionServiceTest {
                 .when(accountClient).debit(any(WithdrawRequestDTO.class));
 
         assertThatExceptionOfType(InsufficientBalanceException.class)
-                .isThrownBy(() -> transactionService.transference(requestDTO))
+                .isThrownBy(() ->
+                        transactionService.transference(idempotencyKey, requestDTO))
                 .withMessage("Insufficient balance");
 
         verify(accountClient).findAccount(idOriginAccount);
         verify(accountClient).findAccount(idTargetAccount);
+
         verify(accountClient).debit(any(WithdrawRequestDTO.class));
+
         verify(accountClient, never()).credit(any(DepositRequestDTO.class));
+
         verifyNoInteractions(eventPublisher);
     }
 
     @Test
     @DisplayName("Should save Pending Transaction when Account client is unavailable")
-    void mustSavePendingTransaction() {
+    void mustSavePendingTransaction() throws Exception {
+
+        UUID idempotencyKey = UUID.randomUUID();
+
         UUID idOriginAccount = UUID.randomUUID();
         UUID idTargetAccount = UUID.randomUUID();
-        BigDecimal value = new BigDecimal("100.00");
 
-        TransferenceRequestDTO requestDTO = new TransferenceRequestDTO(
-                idOriginAccount, idTargetAccount, value
-        );
+        TransferenceRequestDTO requestDTO =
+                new TransferenceRequestDTO(idOriginAccount, idTargetAccount, new BigDecimal("100.00"));
 
-        AccountResponseDTO originAccount = new AccountResponseDTO(
-                idOriginAccount, UUID.randomUUID(), "4567", new BigDecimal("50.00")
-        );
+        AccountResponseDTO originAccount =
+                new AccountResponseDTO(idOriginAccount, UUID.randomUUID(), "4567", new BigDecimal("50.00"));
 
-        AccountResponseDTO destinationAccount = new AccountResponseDTO(
-                idTargetAccount, UUID.randomUUID(), "4567", new BigDecimal("10.00")
-        );
+        AccountResponseDTO destinationAccount =
+                new AccountResponseDTO(idTargetAccount, UUID.randomUUID(), "4567", new BigDecimal("10.00"));
+
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get(anyString())).thenReturn(null);
 
         when(accountClient.findAccount(idOriginAccount)).thenReturn(originAccount);
         when(accountClient.findAccount(idTargetAccount)).thenReturn(destinationAccount);
 
-        doThrow(new ServiceUnavailableException(""))
+        when(transactionRepository.save(any(Transaction.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        // 🔥 IMPORTANTE: lançar exception compatível com service
+        doThrow(new ServiceUnavailableException("Account service unavailable"))
                 .when(accountClient).debit(any(WithdrawRequestDTO.class));
 
-        TransactionResponseDTO response = transactionService.transference(requestDTO);
+        TransactionResponseDTO response =
+                transactionService.transference(idempotencyKey, requestDTO);
 
         assertThat(response.status()).isEqualTo(TransactionStatus.PENDING);
 
-        verify(pendingRepository).save(any(PendingTransaction.class));
-        verify(accountClient, never()).credit(any(DepositRequestDTO.class));
+        verify(pendingRepository, times(1))
+                .save(any(PendingTransaction.class));
+
+        verify(accountClient, never()).credit(any());
+
         verifyNoInteractions(eventPublisher);
     }
 

@@ -10,6 +10,7 @@ import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
 import br.com.bytebank.transactions.api.openapi.controller.TransactionControllerOpenApi;
 import br.com.bytebank.transactions.application.service.TransactionService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +32,13 @@ public class TransactionController implements TransactionControllerOpenApi {
 
     @Override
     @PostMapping("/deposit")
-    public ResponseEntity<DepositResponseDTO> deposit(@Valid @RequestBody DepositRequestDTO depositRequestDTO){
+    public ResponseEntity<DepositResponseDTO> deposit(
+            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
+            @Valid @RequestBody DepositRequestDTO depositRequestDTO) throws JsonProcessingException {
 
         log.info("Request received. endpoint=POST /deposit value={}",depositRequestDTO.amount());
 
-        var deposit = transactionService.deposit(depositRequestDTO);
+        var deposit = transactionService.deposit(idempotencyKey ,depositRequestDTO);
 
         log.info("Deposit completed. accountID={}", depositRequestDTO.accountId());
         return ResponseEntity.status(HttpStatus.OK).body(deposit);
@@ -43,11 +46,13 @@ public class TransactionController implements TransactionControllerOpenApi {
 
     @Override
     @PostMapping("/withdraw")
-    public ResponseEntity<WithdrawResponseDTO> withdraw(@Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO){
+    public ResponseEntity<WithdrawResponseDTO> withdraw(
+            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
+            @Valid @RequestBody WithdrawRequestDTO withdrawRequestDTO) throws JsonProcessingException {
 
         log.info("Request received. endpoint=POST /withdraw value={}",withdrawRequestDTO.amount());
 
-        var transaction = transactionService.withdraw(withdrawRequestDTO);
+        var transaction = transactionService.withdraw(idempotencyKey ,withdrawRequestDTO);
 
         log.info("Withdraw completed. accountID={}", withdrawRequestDTO.accountId());
         return ResponseEntity.status(HttpStatus.OK).body(transaction);
@@ -55,9 +60,11 @@ public class TransactionController implements TransactionControllerOpenApi {
 
     @Override
     @PostMapping("/transference")
-    public ResponseEntity<TransactionResponseDTO> transference(@Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO){
+    public ResponseEntity<TransactionResponseDTO> transference(
+            @RequestHeader("Idempotency-Key") UUID idempotencyKey,
+            @Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO) throws JsonProcessingException {
         log.info("Transference request received. endpoint=POST  value={}",transferenceRequestDTO.amount());
-        var transference = transactionService.transference(transferenceRequestDTO);
+        var transference = transactionService.transference(idempotencyKey ,transferenceRequestDTO);
         log.info("Transference done successfully. value={}",transferenceRequestDTO.amount());
         return ResponseEntity.ok(transference);
     }
