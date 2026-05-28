@@ -31,83 +31,22 @@ public class TransactionsRetryScheduler {
     private final AccountClient accountClient;
 
     @Scheduled(fixedDelayString = "${bytebank.transactions.retry.transfer-delay-ms}")
-    public void retryPendingTransference() {
-        log.info("Running retryPendingTransference scheduler...");
-
-        List<PendingTransaction> list =
-                pendingTransactionRepository.findByOperationTypeAndProcessedFalse(OperationType.TRANSFER);
-
-        if (list.isEmpty()) {
-            log.info("No pending transference found.");
-            return;
-        }
-
-        for (PendingTransaction pendingOpening : list) {
-
-            try {
-                if (pendingOpening.getFailureReason() == FailureReason.DEBIT_FAILED) {
-                    accountClient.debit(new WithdrawRequestDTO(pendingOpening.getOriginAccountId(), pendingOpening.getAmount()));
-                    log.info("Debit retry succeeded into accountId={}", pendingOpening.getOriginAccountId());
-                }
-
-                try {
-                    accountClient.credit(new DepositRequestDTO(pendingOpening.getDestinationAccountId(), pendingOpening.getAmount()));
-                    transactionRepository.findById(pendingOpening.getSourceTransaction().getId())
-                            .ifPresent(t -> {
-                                t.setStatus(TransactionStatus.COMPLETED);
-                                transactionRepository.save(t);
-                                log.info("Pending transference retried successfully. pendingId={}, accountOriginId={}, targetAccountId={} amount={}",
-                                        pendingOpening.getId(), pendingOpening.getOriginAccountId(), pendingOpening.getDestinationAccountId(), pendingOpening.getAmount());
-                            });
-                    pendingOpening.setProcessed(true);
-                    pendingOpening.setTransactionStatus(TransactionStatus.COMPLETED);
-                    pendingTransactionRepository.save(pendingOpening);
-
-                } catch (FeignException e) {
-                    pendingOpening.setAttempts(pendingOpening.getAttempts() + 1);
-                    if (pendingOpening.getAttempts() > MAX_ATTEMPTS) {
-                        handleMaxAttempts(pendingOpening);
+    public void retryPendingTransfer() {
+        log.info("Running retryPendingTransfer scheduler...");
+        retryPendingOperations(
+                OperationType.TRANSFER,
+                pending -> {
+                    if (pending.getFailureReason() == FailureReason.DEBIT_FAILED) {
+                        accountClient.debit(
+                                new WithdrawRequestDTO(pending.getOriginAccountId(), pending.getAmount())
+                        );
                     }
-
-                    pendingTransactionRepository.save(pendingOpening);
+                    accountClient.credit(
+                            new DepositRequestDTO(pending.getDestinationAccountId(), pending.getAmount())
+                    );
                 }
-            } catch (FeignException e) {
-                pendingOpening.setAttempts(pendingOpening.getAttempts() + 1);
-
-                if (pendingOpening.getAttempts() > MAX_ATTEMPTS) {
-                    handleMaxAttempts(pendingOpening);
-                }
-                pendingTransactionRepository.save(pendingOpening);
-            }
-        }
+        );
     }
-
-    private void handleMaxAttempts(PendingTransaction pendingOpening) {
-        if (pendingOpening.getOperationType() == OperationType.TRANSFER
-                && pendingOpening.getFailureReason() == FailureReason.CREDIT_FAILED) {
-            try {
-                accountClient.credit(
-                        new DepositRequestDTO(
-                                pendingOpening.getOriginAccountId(),
-                                pendingOpening.getAmount()
-                        )
-                );
-                log.info("Rollback succeeded. Refunded origin account. pendingId={}", pendingOpening.getId());
-            } catch (FeignException e) {
-                log.error("Rollback failed. Manual intervention required. pendingId={}", pendingOpening.getId());
-                return;
-            }
-        }
-        pendingOpening.setTransactionStatus(TransactionStatus.FAILED);
-        pendingOpening.setProcessed(true);
-        transactionRepository.findById(pendingOpening.getSourceTransaction().getId())
-                .ifPresent(t -> {
-                    t.setStatus(TransactionStatus.FAILED);
-                    transactionRepository.save(t);
-                });
-        log.error("Max attempts reached. Marking as FAILED. pendingId={}", pendingOpening.getId());
-    }
-
 
     @Scheduled(fixedDelayString = "${bytebank.transactions.retry.deposit-delay-ms}")
     public void retryPendingDeposit() {
@@ -162,6 +101,32 @@ public class TransactionsRetryScheduler {
         pending.setTransactionStatus(TransactionStatus.COMPLETED);
         pendingTransactionRepository.save(pending);
         log.info("Retry succeeded. pendingId={}", pending.getId());
+    }
+
+    private void handleMaxAttempts(PendingTransaction pendingOpening) {
+        if (pendingOpening.getOperationType() == OperationType.TRANSFER
+                && pendingOpening.getFailureReason() == FailureReason.CREDIT_FAILED) {
+            try {
+                accountClient.credit(
+                        new DepositRequestDTO(
+                                pendingOpening.getOriginAccountId(),
+                                pendingOpening.getAmount()
+                        )
+                );
+                log.info("Rollback succeeded. Refunded origin account. pendingId={}", pendingOpening.getId());
+            } catch (FeignException e) {
+                log.error("Rollback failed. Manual intervention required. pendingId={}", pendingOpening.getId());
+                return;
+            }
+        }
+        pendingOpening.setTransactionStatus(TransactionStatus.FAILED);
+        pendingOpening.setProcessed(true);
+        transactionRepository.findById(pendingOpening.getSourceTransaction().getId())
+                .ifPresent(t -> {
+                    t.setStatus(TransactionStatus.FAILED);
+                    transactionRepository.save(t);
+                });
+        log.error("Max attempts reached. Marking as FAILED. pendingId={}", pendingOpening.getId());
     }
 
     private void handleRetryFailure(PendingTransaction pending) {
