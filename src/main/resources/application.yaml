@@ -68,3 +68,5 @@ bytebank:
       deposit-delay-ms: 300000 #  5 minutes
       withdraw-delay-ms: 60000 # 1 minute
       transfer-delay-ms: 60000 # 1 minute
+
+kind: Application
