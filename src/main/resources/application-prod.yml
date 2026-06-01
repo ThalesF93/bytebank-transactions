@@ -8,6 +8,15 @@ spring:
   mvc:
     problemdetails:
       enabled: false
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000
 
   application:
     name: bytebank-transactions
@@ -69,7 +78,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, prometheus, metrics
+        include: health, info, prometheus, metrics, heapdump
   tracing:
     sampling:
       probability: 1.0
