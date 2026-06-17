@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.infrastructure.messaging.event;
+package br.com.bytebank.transactions.infrastructure.messaging.rabbitmq.event;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

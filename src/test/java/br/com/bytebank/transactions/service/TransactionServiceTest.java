@@ -15,7 +15,7 @@ import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.exception.customized_exceptions.*;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
-import br.com.bytebank.transactions.infrastructure.messaging.TransactionEventPublisher;
+import br.com.bytebank.transactions.infrastructure.messaging.rabbitmq.TransactionEventPublisher;
 import br.com.bytebank.transactions.infrastructure.repositories.PendingTransactionRepository;
 import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;

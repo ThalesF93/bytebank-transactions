@@ -17,7 +17,10 @@ import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.exception.customized_exceptions.*;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
-import br.com.bytebank.transactions.infrastructure.messaging.TransactionEventPublisher;
+import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedDomainEvent;
+import br.com.bytebank.transactions.infrastructure.messaging.kafka.producer.TransactionEventProducer;
+import br.com.bytebank.transactions.infrastructure.messaging.kafka.publisher.TransactionKafkaPublisher;
+import br.com.bytebank.transactions.infrastructure.messaging.rabbitmq.TransactionEventPublisher;
 import br.com.bytebank.transactions.infrastructure.repositories.PendingTransactionRepository;
 import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -50,6 +53,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final TransactionEventPublisher eventPublisher;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final TransactionKafkaPublisher kafkaPublisher;
 
 
     @Override
@@ -72,7 +76,9 @@ public class TransactionServiceImpl implements TransactionService {
             accountClient.debit(new WithdrawRequestDTO(requestDTO.accountId(), requestDTO.amount()));
             transaction.setStatus(TransactionStatus.COMPLETED);
             log.info("Withdraw succeeded. accountId={}, value={}", requestDTO.accountId(), requestDTO.amount());
+            kafkaPublisher.onTransactionCreated(new TransactionCreatedDomainEvent(transaction));
             transactionRepository.save(transaction);
+
 
         } catch (FeignException e) {
 
@@ -108,6 +114,7 @@ public class TransactionServiceImpl implements TransactionService {
             accountClient.credit(new DepositRequestDTO(requestDTO.accountId(), requestDTO.amount()));
             transaction.setStatus(TransactionStatus.COMPLETED);
             log.info("Deposit succeeded. accountId={}, value={}", requestDTO.accountId(), requestDTO.amount());
+            kafkaPublisher.onTransactionCreated(new TransactionCreatedDomainEvent(transaction));
             transactionRepository.save(transaction);
 
         } catch (FeignException e) {
@@ -232,7 +239,7 @@ public class TransactionServiceImpl implements TransactionService {
         transactionRepository.save(transaction);
 
         eventPublisher.publishTransferenceCompleted(transaction);
-
+        kafkaPublisher.onTransactionCreated(new TransactionCreatedDomainEvent(transaction));
         log.info("Transference succeeded. originAccountId={}, destinationAccountId={}, value={}",
                 dto.originAccountId(), dto.destinationAccountId(), dto.amount());
 

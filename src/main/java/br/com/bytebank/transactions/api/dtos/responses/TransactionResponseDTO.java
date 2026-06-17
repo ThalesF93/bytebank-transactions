@@ -7,6 +7,7 @@ import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -31,7 +32,7 @@ public record TransactionResponseDTO(
         @Schema(description = "A message for the user")
         String message
 
-) {
+) implements Serializable {
     public static TransactionResponseDTO transferenceCompletedResponse(Transaction transaction) {
         return new TransactionResponseDTO(
                 transaction.getOriginAccountId(),
