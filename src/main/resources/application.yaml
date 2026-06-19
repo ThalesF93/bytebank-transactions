@@ -14,11 +14,16 @@ spring:
       ddl-auto: update
     show-sql: true
   datasource:
-
     driver-class-name: org.postgresql.Driver
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
   cloud:
     openfeign:
       circuitbreaker:
@@ -26,6 +31,24 @@ spring:
       httpclient:
         hc5:
           enabled: true
+  Kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 2147483647
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        linger.ms: 5
+        batch.size: 32768
+        compression.type: snappy
+        spring.json.type.mapping: transaction-created:br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedEvent
+
+    listener:
+      ack-mode: manual_immediate
 server:
   port: 8083
 resilience4j:

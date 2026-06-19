@@ -1,22 +1,21 @@
 package br.com.bytebank.transactions.infrastructure.scheduler;
 
 
-import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
-import br.com.bytebank.transactions.api.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
+import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.domain.entity.PendingTransaction;
 import br.com.bytebank.transactions.domain.enums.FailureReason;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
-import br.com.bytebank.transactions.infrastructure.repositories.PendingTransactionRepository;
-import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepository;
+import br.com.bytebank.transactions.infrastructure.database.PendingTransactionRepository;
+import br.com.bytebank.transactions.infrastructure.database.TransactionRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 @Component
