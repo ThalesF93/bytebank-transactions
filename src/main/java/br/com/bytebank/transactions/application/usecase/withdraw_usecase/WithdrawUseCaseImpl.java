@@ -38,7 +38,7 @@ public class WithdrawUseCaseImpl implements WithdrawUseCase{
     private final TransactionValidator validator;
 
     @Override
-    public WithdrawResponseDTO withdraw(UUID idempotencyKey, WithdrawRequestDTO requestDTO) {
+    public WithdrawResponseDTO execute(UUID idempotencyKey, WithdrawRequestDTO requestDTO) {
         validator.amountValidation(requestDTO.amount());
 
         String cacheKey = "idempotency:withdraw:" + idempotencyKey;
@@ -56,9 +56,8 @@ public class WithdrawUseCaseImpl implements WithdrawUseCase{
             accountClient.debit(new WithdrawRequestDTO(requestDTO.accountId(), requestDTO.amount()));
             transaction.setStatus(TransactionStatus.COMPLETED);
             log.info("Withdraw succeeded. accountId={}, value={}", requestDTO.accountId(), requestDTO.amount());
-            kafkaPublisher.onTransactionCreated(new TransactionCreatedDomainEvent(transaction));
             transactionRepository.save(transaction);
-
+            kafkaPublisher.onTransactionCreated(new TransactionCreatedDomainEvent(transaction));
 
         } catch (FeignException e) {
 

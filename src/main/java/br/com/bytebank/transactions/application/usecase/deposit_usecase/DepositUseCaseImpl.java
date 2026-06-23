@@ -56,8 +56,8 @@ public class DepositUseCaseImpl implements DepositUseCase{
             accountClient.credit(new DepositRequestDTO(requestDTO.accountId(), requestDTO.amount()));
             transaction.setStatus(TransactionStatus.COMPLETED);
             log.info("Deposit succeeded. accountId={}, value={}", requestDTO.accountId(), requestDTO.amount());
-            kafkaPublisher.onTransactionCreated(new TransactionCreatedDomainEvent(transaction));
             transactionRepository.save(transaction);
+            kafkaPublisher.onTransactionCreated(new TransactionCreatedDomainEvent(transaction));
 
         } catch (FeignException e) {
             transaction.setStatus(TransactionStatus.PENDING);

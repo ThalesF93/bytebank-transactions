@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @Component
-public class TransactionRepositoryImpl implements TransactionRepositoryDomain {
+public class TransactionRepositoryGateway implements TransactionRepositoryDomain {
 
     private final TransactionRepository transactionRepository;
 

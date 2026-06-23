@@ -6,5 +6,5 @@ import br.com.bytebank.transactions.infrastructure.api.dtos.responses.WithdrawRe
 import java.util.UUID;
 
 public interface WithdrawUseCase {
-    WithdrawResponseDTO withdraw(UUID idempotencyKey, WithdrawRequestDTO requestDTO);
+    WithdrawResponseDTO execute(UUID idempotencyKey, WithdrawRequestDTO requestDTO);
 }

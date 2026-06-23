@@ -1,8 +1,14 @@
 package br.com.bytebank.transactions.infrastructure.api.controller;
 
 
+import br.com.bytebank.transactions.application.usecase.deposit_usecase.DepositUseCase;
+import br.com.bytebank.transactions.application.usecase.transference_usecase.TransferenceUseCase;
+import br.com.bytebank.transactions.application.usecase.update_transaction_usecase.UpdateTransactionUseCase;
+import br.com.bytebank.transactions.application.usecase.withdraw_usecase.WithdrawUseCase;
+import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.requests.TransferenceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.api.dtos.requests.UpdateTransactionStatusRequestDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.responses.BankStatementResponseDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.responses.DepositResponseDTO;
@@ -28,6 +34,10 @@ import java.util.UUID;
 public class TransactionController implements TransactionControllerOpenApi {
 
     private final TransactionService transactionService;
+    private final DepositUseCase depositUseCase;
+    private final TransferenceUseCase transferenceUseCase;
+    private final WithdrawUseCase withdrawUseCase;
+    private final UpdateTransactionUseCase updateTransactionUseCase;
 
     @Override
     @PostMapping("/deposit")
@@ -37,7 +47,7 @@ public class TransactionController implements TransactionControllerOpenApi {
 
         log.info("Request received. endpoint=POST /deposit value={}",depositRequestDTO.amount());
 
-        var deposit = transactionService.deposit(idempotencyKey ,depositRequestDTO);
+        var deposit = depositUseCase.execute(idempotencyKey ,depositRequestDTO);
 
         log.info("Deposit completed. accountID={}", depositRequestDTO.accountId());
         return ResponseEntity.status(HttpStatus.OK).body(deposit);
@@ -51,7 +61,7 @@ public class TransactionController implements TransactionControllerOpenApi {
 
         log.info("Request received. endpoint=POST /withdraw value={}",withdrawRequestDTO.amount());
 
-        var transaction = transactionService.withdraw(idempotencyKey ,withdrawRequestDTO);
+        var transaction = withdrawUseCase.execute(idempotencyKey ,withdrawRequestDTO);
 
         log.info("Withdraw completed. accountID={}", withdrawRequestDTO.accountId());
         return ResponseEntity.status(HttpStatus.OK).body(transaction);
@@ -63,7 +73,7 @@ public class TransactionController implements TransactionControllerOpenApi {
             @RequestHeader("Idempotency-Key") UUID idempotencyKey,
             @Valid @RequestBody TransferenceRequestDTO transferenceRequestDTO)  {
         log.info("Transference request received. endpoint=POST  value={}",transferenceRequestDTO.amount());
-        var transference = transactionService.transference(idempotencyKey ,transferenceRequestDTO);
+        var transference = transferenceUseCase.execute(idempotencyKey ,transferenceRequestDTO);
         log.info("Transference done successfully. value={}",transferenceRequestDTO.amount());
         return ResponseEntity.ok(transference);
     }
@@ -84,4 +94,12 @@ public class TransactionController implements TransactionControllerOpenApi {
         return ResponseEntity.ok(transactionService.getTransactionById(id));
     }
 
+    @Override
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Void> updateTransactionStatus(@PathVariable UUID id, @RequestBody UpdateTransactionStatusRequestDTO status){
+        log.info("changing status from transaction. ID ={}", id);
+        var newStatus = status.status();
+        updateTransactionUseCase.execute(id, newStatus);
+        return ResponseEntity.noContent().build();
+    }
 }

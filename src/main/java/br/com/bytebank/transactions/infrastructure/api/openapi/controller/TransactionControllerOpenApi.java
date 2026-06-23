@@ -1,7 +1,9 @@
 package br.com.bytebank.transactions.infrastructure.api.openapi.controller;
 
+import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.requests.TransferenceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.api.dtos.requests.UpdateTransactionStatusRequestDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.responses.BankStatementResponseDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.responses.DepositResponseDTO;
@@ -122,4 +124,20 @@ public interface TransactionControllerOpenApi {
 
     })
     ResponseEntity<TransactionResponseDTO> getTransaction(@Parameter(description = "Id to find a transaction", required = true) UUID id);
+
+    @Operation(summary = "Change transaction status")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Transaction status changed"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Transaction not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+            ),
+
+    })
+    ResponseEntity<Void> updateTransactionStatus(@Parameter(description = "Id to find a transaction", required = true) UUID id,
+                                                 @Parameter(description = "DTO receiving status") UpdateTransactionStatusRequestDTO status);
 }
