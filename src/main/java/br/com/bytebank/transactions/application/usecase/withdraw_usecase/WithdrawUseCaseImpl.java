@@ -1,7 +1,6 @@
 package br.com.bytebank.transactions.application.usecase.withdraw_usecase;
 
 import br.com.bytebank.transactions.application.factory.TransactionFactory;
-import br.com.bytebank.transactions.application.validator.CacheValidator;
 import br.com.bytebank.transactions.application.validator.TransactionValidator;
 import br.com.bytebank.transactions.domain.entity.PendingTransaction;
 import br.com.bytebank.transactions.domain.entity.Transaction;

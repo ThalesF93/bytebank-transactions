@@ -1,5 +1,6 @@
 package br.com.bytebank.transactions.infrastructure.messaging.kafka.producer;
 
+import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,12 +10,15 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class TransactionEventProducer {
+public class TransactionEventProducer  {
 
     private static final String TOPIC = "transaction.created";
     private final KafkaTemplate<String, TransactionCreatedEvent> kafkaTemplate;
 
-    public void publish(TransactionCreatedEvent event){
+        public void publish(Transaction transaction){
+
+        var event = TransactionCreatedEvent.from(transaction);
+
        var message = kafkaTemplate.send(TOPIC, event.originAccountId().toString(),event);
 
        message.whenComplete((result, ex)->

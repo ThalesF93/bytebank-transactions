@@ -6,4 +6,9 @@ public record TransactionCreatedDomainEvent(Transaction transaction) {
     public TransactionCreatedEvent toKafkaEvent() {
         return TransactionCreatedEvent.from(transaction);
     }
+
+    public Transaction toEntity(){
+        return transaction;
+    }
+
 }

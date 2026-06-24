@@ -2,7 +2,6 @@ package br.com.bytebank.transactions.application.usecase.transference_usecase;
 
 
 import br.com.bytebank.transactions.application.factory.TransactionFactory;
-import br.com.bytebank.transactions.application.validator.CacheValidator;
 import br.com.bytebank.transactions.application.validator.TransactionValidator;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.FailureReason;

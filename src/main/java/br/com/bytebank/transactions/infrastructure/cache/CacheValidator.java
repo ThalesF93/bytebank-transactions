@@ -1,5 +1,6 @@
-package br.com.bytebank.transactions.application.validator;
+package br.com.bytebank.transactions.infrastructure.cache;
 
+import br.com.bytebank.transactions.domain.contract.IdempotencyContract;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.IdempotencyCacheException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,11 +18,12 @@ import static br.com.bytebank.transactions.infrastructure.exception.customized_e
 @RequiredArgsConstructor
 @Slf4j
 @Component
-public class CacheValidator {
+public class CacheValidator implements IdempotencyContract {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
+    @Override
     public void toIdempotencyCache(String cacheKey, Object value) {
         try {
             redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(value), Duration.ofHours(24));
@@ -31,6 +33,7 @@ public class CacheValidator {
         }
     }
 
+    @Override
     public  <T> T fromIdempotencyCache(Object value, Class<T> clazz) {
         try {
             return objectMapper.readValue(value.toString(), clazz);

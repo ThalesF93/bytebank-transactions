@@ -1,18 +1,18 @@
 package br.com.bytebank.transactions.application.usecase.deposit_usecase;
 
 import br.com.bytebank.transactions.application.factory.TransactionFactory;
-import br.com.bytebank.transactions.application.validator.CacheValidator;
 import br.com.bytebank.transactions.application.validator.TransactionValidator;
+import br.com.bytebank.transactions.domain.contract.AccountClientContract;
+import br.com.bytebank.transactions.domain.contract.IdempotencyContract;
 import br.com.bytebank.transactions.domain.entity.PendingTransaction;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.FailureReason;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
+import br.com.bytebank.transactions.domain.repository.PendingTransactionContract;
 import br.com.bytebank.transactions.domain.repository.TransactionRepositoryDomain;
 import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.infrastructure.api.dtos.responses.DepositResponseDTO;
-import br.com.bytebank.transactions.infrastructure.database.PendingTransactionRepository;
-import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
 import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedDomainEvent;
 import br.com.bytebank.transactions.infrastructure.messaging.kafka.publisher.TransactionKafkaPublisher;
 import feign.FeignException;
@@ -28,10 +28,10 @@ import java.util.UUID;
 @Slf4j
 public class DepositUseCaseImpl implements DepositUseCase{
 
-    private final PendingTransactionRepository pendingTransactionRepository;
+    private final PendingTransactionContract pendingTransactionRepository;
     private final TransactionRepositoryDomain transactionRepository;
-    private final AccountClient accountClient;
-    private final CacheValidator cacheValidator;
+    private final AccountClientContract accountClient;
+    private final IdempotencyContract cacheValidator;
     private final RedisTemplate<String, Object> redisTemplate;
     private final TransactionKafkaPublisher kafkaPublisher;
     private final TransactionFactory transactionFactory;
@@ -53,7 +53,7 @@ public class DepositUseCaseImpl implements DepositUseCase{
         transactionRepository.save(transaction);
 
         try {
-            accountClient.credit(new DepositRequestDTO(requestDTO.accountId(), requestDTO.amount()));
+            accountClient.credit(requestDTO.accountId(), requestDTO.amount());
             transaction.setStatus(TransactionStatus.COMPLETED);
             log.info("Deposit succeeded. accountId={}, value={}", requestDTO.accountId(), requestDTO.amount());
             transactionRepository.save(transaction);

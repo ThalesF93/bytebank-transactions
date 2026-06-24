@@ -15,6 +15,6 @@ public class TransactionKafkaPublisher {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onTransactionCreated(TransactionCreatedDomainEvent event) {
-        producer.publish(event.toKafkaEvent());
+        producer.publish(event.toEntity());
     }
 }
