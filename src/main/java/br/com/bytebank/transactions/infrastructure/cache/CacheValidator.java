@@ -42,4 +42,9 @@ public class CacheValidator implements IdempotencyContract {
             throw new IdempotencyCacheException(DESERIALIZE);
         }
     }
+
+    @Override
+    public Object get(String cacheKey) {
+        return redisTemplate.opsForValue().get(cacheKey);
+    }
 }
