@@ -1,8 +1,8 @@
 package br.com.bytebank.transactions.infrastructure.feignclient;
 
 import br.com.bytebank.transactions.domain.contract.AccountClientContract;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

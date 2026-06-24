@@ -1,9 +1,9 @@
 package br.com.bytebank.transactions;
 
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.AccountOperationRequest;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.TransferenceRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.AccountOperationRequest;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.TransferenceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;

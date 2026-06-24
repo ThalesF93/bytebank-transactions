@@ -1,6 +1,6 @@
 package br.com.bytebank.transactions.infrastructure.messaging.rabbitmq;
 
-import br.com.bytebank.transactions.infrastructure.api.dtos.client.responses.CustomerClientResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.client.responses.CustomerClientResponseDTO;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.CustomerNotFoundException;
 import br.com.bytebank.transactions.infrastructure.config.RabbitMQConfig;

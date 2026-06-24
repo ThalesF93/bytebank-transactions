@@ -1,8 +1,8 @@
 package br.com.bytebank.transactions.application.service;
 
 import br.com.bytebank.transactions.domain.repository.TransactionRepositoryDomain;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.BankStatementResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.TransactionResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.BankStatementResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.TransactionException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

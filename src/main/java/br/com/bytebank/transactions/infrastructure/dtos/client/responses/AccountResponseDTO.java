@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.infrastructure.api.dtos.client.responses;
+package br.com.bytebank.transactions.infrastructure.dtos.client.responses;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

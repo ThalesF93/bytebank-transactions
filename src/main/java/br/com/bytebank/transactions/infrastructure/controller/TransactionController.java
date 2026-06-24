@@ -1,20 +1,19 @@
-package br.com.bytebank.transactions.infrastructure.api.controller;
+package br.com.bytebank.transactions.infrastructure.controller;
 
 
 import br.com.bytebank.transactions.application.usecase.deposit_usecase.DepositUseCase;
 import br.com.bytebank.transactions.application.usecase.transference_usecase.TransferenceUseCase;
 import br.com.bytebank.transactions.application.usecase.update_transaction_usecase.UpdateTransactionUseCase;
 import br.com.bytebank.transactions.application.usecase.withdraw_usecase.WithdrawUseCase;
-import br.com.bytebank.transactions.domain.enums.TransactionStatus;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.TransferenceRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.UpdateTransactionStatusRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.BankStatementResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.DepositResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.TransactionResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.WithdrawResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.openapi.controller.TransactionControllerOpenApi;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.TransferenceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.UpdateTransactionStatusRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.BankStatementResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.DepositResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.TransactionResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.WithdrawResponseDTO;
+import br.com.bytebank.transactions.infrastructure.openapi.TransactionControllerOpenApi;
 import br.com.bytebank.transactions.application.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

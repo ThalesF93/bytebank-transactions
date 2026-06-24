@@ -5,7 +5,7 @@ import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.FailureReason;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.AccountOperationRequest;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.AccountOperationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;

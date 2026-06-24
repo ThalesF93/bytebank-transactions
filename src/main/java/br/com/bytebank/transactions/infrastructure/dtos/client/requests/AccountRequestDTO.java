@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.infrastructure.api.dtos.client.requests;
+package br.com.bytebank.transactions.infrastructure.dtos.client.requests;
 
 import java.util.UUID;
 

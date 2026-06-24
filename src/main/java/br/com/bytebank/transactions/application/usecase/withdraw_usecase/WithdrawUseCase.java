@@ -1,7 +1,7 @@
 package br.com.bytebank.transactions.application.usecase.withdraw_usecase;
 
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.WithdrawResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.WithdrawResponseDTO;
 
 import java.util.UUID;
 

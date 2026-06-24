@@ -1,14 +1,13 @@
-package br.com.bytebank.transactions.infrastructure.api.openapi.controller;
+package br.com.bytebank.transactions.infrastructure.openapi;
 
-import br.com.bytebank.transactions.domain.enums.TransactionStatus;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.TransferenceRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.UpdateTransactionStatusRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.BankStatementResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.DepositResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.TransactionResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.responses.WithdrawResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.TransferenceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.UpdateTransactionStatusRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.BankStatementResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.DepositResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.TransactionResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.WithdrawResponseDTO;
 import br.com.bytebank.transactions.infrastructure.exception.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

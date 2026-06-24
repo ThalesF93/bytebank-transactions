@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.infrastructure.api.dtos.responses;
+package br.com.bytebank.transactions.infrastructure.dtos.responses;
 
 
 

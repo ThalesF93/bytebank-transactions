@@ -1,7 +1,7 @@
 package br.com.bytebank.transactions.application.validator;
 
-import br.com.bytebank.transactions.infrastructure.api.dtos.client.responses.AccountResponseDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.TransferenceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.client.responses.AccountResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.TransferenceRequestDTO;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.AccountNotFoundException;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.AccountServiceUnavailableException;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.InvalidAmountException;

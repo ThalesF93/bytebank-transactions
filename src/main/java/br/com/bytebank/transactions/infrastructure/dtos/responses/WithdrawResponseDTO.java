@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.infrastructure.api.dtos.responses;
+package br.com.bytebank.transactions.infrastructure.dtos.responses;
 
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.OperationType;
@@ -8,16 +8,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@Schema(description = "Response information after deposit")
-public record DepositResponseDTO(
+@Schema(description = "Response information after withdraw")
+public record WithdrawResponseDTO(
 
-        @Schema(description = "Account thas has been credited a value")
+        @Schema(description = "Account thas has been debited a value")
         UUID originId,
 
         @Schema(description = "The Operation type")
         OperationType type,
 
-        @Schema(description = "The value of deposit")
+        @Schema(description = "The value of withdraw")
         BigDecimal amount,
 
         @Schema(description = "The current status")
@@ -26,14 +26,13 @@ public record DepositResponseDTO(
         @Schema(description = "A message for the user")
         String message
 ) {
-
-    public static DepositResponseDTO response(Transaction transaction){
-        return new DepositResponseDTO(
+    public static WithdrawResponseDTO response(Transaction transaction){
+        return new WithdrawResponseDTO(
                 transaction.getId(),
                 transaction.getType(),
                 transaction.getAmount(),
                 transaction.getStatus(),
-                "Deposited successfully!"
+                "Withdraw successfully done!"
         );
     }
 }

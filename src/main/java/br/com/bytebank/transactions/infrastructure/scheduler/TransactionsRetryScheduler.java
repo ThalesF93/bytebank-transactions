@@ -1,8 +1,8 @@
 package br.com.bytebank.transactions.infrastructure.scheduler;
 
 
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.DepositRequestDTO;
-import br.com.bytebank.transactions.infrastructure.api.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.domain.entity.PendingTransaction;
 import br.com.bytebank.transactions.domain.enums.FailureReason;
 import br.com.bytebank.transactions.domain.enums.OperationType;
