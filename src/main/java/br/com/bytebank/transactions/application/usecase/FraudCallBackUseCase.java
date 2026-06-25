@@ -1,8 +1,8 @@
 package br.com.bytebank.transactions.application.usecase;
 
-import br.com.bytebank.transactions.infrastructure.dtos.requests.FraudServiceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.FraudScoreEvent;
 
 public interface FraudCallBackUseCase {
 
-    void execute(FraudServiceRequestDTO dto);
+    void execute(FraudScoreEvent dto);
 }

@@ -5,7 +5,7 @@ import br.com.bytebank.transactions.application.usecase.FraudCallBackUseCase;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.repository.TransactionRepositoryDomain;
-import br.com.bytebank.transactions.infrastructure.dtos.requests.FraudServiceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.FraudScoreEvent;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.InvalidFraudScoreException;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.OperationTypeNoneExistingException;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.TransactionException;
@@ -25,7 +25,7 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
     private final OperationExecutor executor;
 
     @Override
-    public void execute(FraudServiceRequestDTO dto) {
+    public void execute(FraudScoreEvent dto) {
         var transaction = transactionRepositoryDomain.findById(dto.transactionID()).orElseThrow(
                 () -> new TransactionException(dto.transactionID()));
         log.info("Starting bank operations: ");
