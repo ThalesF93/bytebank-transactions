@@ -31,7 +31,7 @@ spring:
       httpclient:
         hc5:
           enabled: true
-  Kafka:
+  kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
     producer:
@@ -47,8 +47,20 @@ spring:
         compression.type: snappy
         spring.json.type.mapping: transaction-created:br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedEvent
 
+    consumer:
+        group-id: fraud-group
+        key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+        value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+        auto-offset-reset: latest
+        enable-auto-commit: false
+        properties:
+          spring.json.trusted.packages: "*"
+          max.poll.records: 50
+          max.poll.interval.ms: 300000
+          spring.json.type.mapping: score.response:br.com.bytebank.transactions.infrastructure.messaging.kafka.event.FraudScoreEvent
     listener:
-      ack-mode: manual_immediate
+        ack-mode: MANUAL_IMMEDIATE
+
 server:
   port: 8083
 resilience4j:

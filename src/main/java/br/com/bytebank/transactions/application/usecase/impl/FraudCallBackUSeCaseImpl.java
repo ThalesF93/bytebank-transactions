@@ -26,16 +26,19 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
 
     @Override
     public void execute(FraudScoreEvent dto) {
-        var transaction = transactionRepositoryDomain.findById(dto.transactionID()).orElseThrow(
-                () -> new TransactionException(dto.transactionID()));
+        var transaction = transactionRepositoryDomain.findById(dto.transactionId()).orElseThrow(
+                () -> new TransactionException(dto.transactionId()));
         log.info("Starting bank operations: ");
         switch (dto.score()) {
             case LOW -> executeLowRiskOperation(transaction);
             case MEDIUM -> executeMediumRiskOperation(transaction);
-            case HIGH -> executor.blockTransaction(transaction);
+            case HIGH -> {
+                executor.blockTransaction(transaction);
+                log.info("Transaction id={} BLOCKED due to high fraud risk", transaction.getId());
+            }
             default -> throw new InvalidFraudScoreException(dto.score());
         }
-        log.info("Transaction id={}, with type={} and risk={}, succeeded", transaction.getId(), dto.score(), transaction.getType());
+
     }
 
     private void executeLowRiskOperation(Transaction transaction){
@@ -44,12 +47,15 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
             case WITHDRAW -> executor.executeWithdraw(transaction);
             case TRANSFER -> executor.executeTransfer(transaction);
             default -> throw new OperationTypeNoneExistingException(transaction.getType());
+
         }
+        log.info("Transaction id={}, risk LOW, with type={}, succeeded", transaction.getId(), transaction.getType());
     }
 
     private void executeMediumRiskOperation(Transaction transaction){
         transaction.setStatus(TransactionStatus.PENDING_CONFIRMATION);
         transactionRepositoryDomain.save(transaction);
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
+        log.info("Transaction id={}, risk MEDIUM with type={}, succeeded", transaction.getId(), transaction.getType());
     }
 }
