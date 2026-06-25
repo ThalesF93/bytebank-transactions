@@ -44,8 +44,8 @@ public class WithdrawUseCaseImpl implements WithdrawUseCase {
         Transaction transaction = transactionFactory.createTransactionEntity(requestDTO, OperationType.WITHDRAW, TransactionStatus.PENDING);
         transactionRepository.save(transaction);
 
-            eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
-
+        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
+        log.info("Withdraw event published. Transaction ID={}", transaction.getId());
         var response = WithdrawResponseDTO.response(transaction);
 
         cacheValidator.toIdempotencyCache(cacheKey, response);

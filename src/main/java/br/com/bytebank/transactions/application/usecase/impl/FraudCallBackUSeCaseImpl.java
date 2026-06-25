@@ -28,13 +28,14 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
     public void execute(FraudServiceRequestDTO dto) {
         var transaction = transactionRepositoryDomain.findById(dto.transactionID()).orElseThrow(
                 () -> new TransactionException(dto.transactionID()));
-
+        log.info("Starting bank operations: ");
         switch (dto.score()) {
             case LOW -> executeLowRiskOperation(transaction);
             case MEDIUM -> executeMediumRiskOperation(transaction);
             case HIGH -> executor.blockTransaction(transaction);
             default -> throw new InvalidFraudScoreException(dto.score());
         }
+        log.info("Transaction id={}, with type={} and risk={}, succeeded", transaction.getId(), dto.score(), transaction.getType());
     }
 
     private void executeLowRiskOperation(Transaction transaction){

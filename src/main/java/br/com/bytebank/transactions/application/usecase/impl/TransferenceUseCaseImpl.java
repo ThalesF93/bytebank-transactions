@@ -54,6 +54,7 @@ public class TransferenceUseCaseImpl implements TransferenceUseCase {
         transactionRepository.save(transaction);
 
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
+        log.info("Transference event published. Transaction ID={}", transaction.getId());
         var response = TransactionResponseDTO.transactionPendingResponse(transaction);
 
         cacheValidator.toIdempotencyCache(cacheKey, response);

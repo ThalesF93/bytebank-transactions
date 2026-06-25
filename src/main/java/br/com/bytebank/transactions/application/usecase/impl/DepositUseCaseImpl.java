@@ -46,7 +46,7 @@ public class DepositUseCaseImpl implements DepositUseCase {
         transactionRepository.save(transaction);
 
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
-
+        log.info("Deposit event published. Transaction ID={}", transaction.getId());
         var response = DepositResponseDTO.response(transaction);
         cacheValidator.toIdempotencyCache(cacheKey, response);
 
