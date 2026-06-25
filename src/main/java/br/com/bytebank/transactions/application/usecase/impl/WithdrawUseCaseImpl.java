@@ -1,6 +1,7 @@
-package br.com.bytebank.transactions.application.usecase.withdraw_usecase;
+package br.com.bytebank.transactions.application.usecase.impl;
 
 import br.com.bytebank.transactions.application.factory.TransactionFactory;
+import br.com.bytebank.transactions.application.usecase.WithdrawUseCase;
 import br.com.bytebank.transactions.application.validator.TransactionValidator;
 import br.com.bytebank.transactions.domain.contract.IdempotencyContract;
 import br.com.bytebank.transactions.domain.entity.Transaction;
@@ -20,7 +21,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class WithdrawUseCaseImpl implements WithdrawUseCase{
+public class WithdrawUseCaseImpl implements WithdrawUseCase {
 
     private final TransactionRepositoryDomain transactionRepository;
     private final IdempotencyContract cacheValidator;

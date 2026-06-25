@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.application.usecase.transference_usecase;
+package br.com.bytebank.transactions.application.usecase;
 
 import br.com.bytebank.transactions.infrastructure.dtos.requests.TransferenceRequestDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.responses.TransactionResponseDTO;

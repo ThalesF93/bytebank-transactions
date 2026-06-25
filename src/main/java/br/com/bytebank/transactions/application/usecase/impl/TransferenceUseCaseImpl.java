@@ -1,14 +1,17 @@
-package br.com.bytebank.transactions.application.usecase.deposit_usecase;
+package br.com.bytebank.transactions.application.usecase.impl;
+
 
 import br.com.bytebank.transactions.application.factory.TransactionFactory;
+import br.com.bytebank.transactions.application.usecase.TransferenceUseCase;
 import br.com.bytebank.transactions.application.validator.TransactionValidator;
 import br.com.bytebank.transactions.domain.contract.IdempotencyContract;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.OperationType;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.repository.TransactionRepositoryDomain;
-import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
-import br.com.bytebank.transactions.infrastructure.dtos.responses.DepositResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.client.responses.AccountResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.TransferenceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedDomainEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,11 +20,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-@Service
 @RequiredArgsConstructor
 @Slf4j
-public class DepositUseCaseImpl implements DepositUseCase{
-
+@Service
+public class TransferenceUseCaseImpl implements TransferenceUseCase {
 
     private final TransactionRepositoryDomain transactionRepository;
     private final IdempotencyContract cacheValidator;
@@ -29,26 +31,35 @@ public class DepositUseCaseImpl implements DepositUseCase{
     private final TransactionFactory transactionFactory;
     private final TransactionValidator validator;
 
-    @Override
-    public DepositResponseDTO execute(UUID idempotencyKey, DepositRequestDTO requestDTO) {
-        validator.amountValidation(requestDTO.amount());
+    public TransactionResponseDTO execute(UUID idempotencyKey, TransferenceRequestDTO dto){
 
-        String cacheKey = "idempotency:deposit:" + idempotencyKey;
+        String cacheKey = "idempotency:transference:" + idempotencyKey;
         Object cached = cacheValidator.get(cacheKey);
 
         if (cached != null) {
-            log.info("Duplicate deposit detected. idempotencyKey={}", idempotencyKey);
-            return cacheValidator.fromIdempotencyCache(cacheKey, DepositResponseDTO.class);
+            log.info("Duplicate transference detected. idempotencyKey={}", idempotencyKey);
+            return cacheValidator.fromIdempotencyCache(cacheKey, TransactionResponseDTO.class);
         }
 
-        Transaction transaction = transactionFactory.createTransactionEntity(requestDTO, OperationType.DEPOSIT, TransactionStatus.PENDING);
+        validator.validatingTransference(dto);
+
+        AccountResponseDTO originAccount;
+        AccountResponseDTO destinationAccount;
+
+        originAccount = validator.getAccountForTransaction(dto.originAccountId());
+        destinationAccount = validator.getAccountForTransaction(dto.destinationAccountId());
+
+        Transaction transaction = transactionFactory.createTransactionEntity(dto, OperationType.TRANSFER, TransactionStatus.PENDING);
+        transaction.setTargetAccountId(dto.destinationAccountId());
         transactionRepository.save(transaction);
 
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
+        var response = TransactionResponseDTO.transactionPendingResponse(transaction);
 
-        var response = DepositResponseDTO.response(transaction);
         cacheValidator.toIdempotencyCache(cacheKey, response);
 
         return response;
     }
+
+
 }

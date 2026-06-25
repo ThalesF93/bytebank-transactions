@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.application.usecase.withdraw_usecase;
+package br.com.bytebank.transactions.application.usecase;
 
 import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.responses.WithdrawResponseDTO;

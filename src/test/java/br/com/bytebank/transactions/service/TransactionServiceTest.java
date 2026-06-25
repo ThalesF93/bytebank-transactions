@@ -1,9 +1,9 @@
 package br.com.bytebank.transactions.service;
 
 import br.com.bytebank.transactions.TestBuilders;
-import br.com.bytebank.transactions.application.usecase.deposit_usecase.DepositUseCase;
-import br.com.bytebank.transactions.application.usecase.transference_usecase.TransferenceUseCase;
-import br.com.bytebank.transactions.application.usecase.withdraw_usecase.WithdrawUseCase;
+import br.com.bytebank.transactions.application.usecase.DepositUseCase;
+import br.com.bytebank.transactions.application.usecase.TransferenceUseCase;
+import br.com.bytebank.transactions.application.usecase.WithdrawUseCase;
 import br.com.bytebank.transactions.infrastructure.dtos.client.responses.AccountResponseDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.requests.TransferenceRequestDTO;

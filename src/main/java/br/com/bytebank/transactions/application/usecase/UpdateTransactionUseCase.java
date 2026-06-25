@@ -1,4 +1,4 @@
-package br.com.bytebank.transactions.application.usecase.update_transaction_usecase;
+package br.com.bytebank.transactions.application.usecase;
 
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 

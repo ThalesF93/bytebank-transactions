@@ -33,27 +33,27 @@ public record TransactionResponseDTO(
         String message
 
 ) implements Serializable {
-    public static TransactionResponseDTO transferenceCompletedResponse(Transaction transaction) {
+    public static TransactionResponseDTO transactionResponseDTO(Transaction transaction) {
         return new TransactionResponseDTO(
                 transaction.getOriginAccountId(),
                 transaction.getTargetAccountId(),
                 transaction.getType(),
                 transaction.getStatus(),
                 transaction.getAmount(),
-                "Transference completed successfully"
+                "Transaction completed successfully"
 
 
         );
     }
 
-    public static TransactionResponseDTO transferencePendingResponse(Transaction transaction) {
+    public static TransactionResponseDTO transactionPendingResponse(Transaction transaction) {
         return new TransactionResponseDTO(
                 transaction.getOriginAccountId(),
                 transaction.getTargetAccountId(),
                 transaction.getType(),
                 transaction.getStatus(),
                 transaction.getAmount(),
-                "Transference is pending, please wait."
+                "Transaction is pending, please wait."
 
 
         );

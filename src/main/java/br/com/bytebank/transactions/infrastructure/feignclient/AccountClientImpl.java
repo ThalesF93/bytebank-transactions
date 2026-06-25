@@ -1,6 +1,7 @@
 package br.com.bytebank.transactions.infrastructure.feignclient;
 
 import br.com.bytebank.transactions.domain.contract.AccountClientContract;
+import br.com.bytebank.transactions.infrastructure.dtos.client.responses.AccountResponseDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
 import lombok.RequiredArgsConstructor;
@@ -25,5 +26,10 @@ public class AccountClientImpl implements AccountClientContract {
     public void credit(UUID accountId, BigDecimal amount) {
         DepositRequestDTO dto = new DepositRequestDTO(accountId, amount);
         accountClient.credit(dto);
+    }
+
+    @Override
+    public AccountResponseDTO findAccount(UUID id) {
+        return accountClient.findAccount(id);
     }
 }
