@@ -30,4 +30,7 @@ public interface AccountClient {
     @GetMapping("/feign/customer/{id}")
     CustomerClientResponseDTO findCustomerByAccountId(@PathVariable UUID id);
 
+    @GetMapping("/customer/{customerId}")
+    AccountResponseDTO findAccountByCustomerId(@PathVariable UUID customerId);
+
 }

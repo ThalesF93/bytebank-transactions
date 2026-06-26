@@ -1,6 +1,7 @@
 package br.com.bytebank.transactions.infrastructure.controller;
 
 
+import br.com.bytebank.transactions.application.service.TransactionService;
 import br.com.bytebank.transactions.application.usecase.DepositUseCase;
 import br.com.bytebank.transactions.application.usecase.TransferenceUseCase;
 import br.com.bytebank.transactions.application.usecase.UpdateTransactionUseCase;
@@ -14,7 +15,6 @@ import br.com.bytebank.transactions.infrastructure.dtos.responses.DepositRespons
 import br.com.bytebank.transactions.infrastructure.dtos.responses.TransactionResponseDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.responses.WithdrawResponseDTO;
 import br.com.bytebank.transactions.infrastructure.openapi.TransactionControllerOpenApi;
-import br.com.bytebank.transactions.application.service.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +37,7 @@ public class TransactionController implements TransactionControllerOpenApi {
     private final TransferenceUseCase transferenceUseCase;
     private final WithdrawUseCase withdrawUseCase;
     private final UpdateTransactionUseCase updateTransactionUseCase;
+
 
     @Override
     @PostMapping("/deposit")

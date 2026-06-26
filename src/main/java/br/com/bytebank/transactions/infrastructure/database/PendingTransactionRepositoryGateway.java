@@ -2,6 +2,7 @@ package br.com.bytebank.transactions.infrastructure.database;
 
 import br.com.bytebank.transactions.domain.entity.PendingTransaction;
 import br.com.bytebank.transactions.domain.enums.OperationType;
+import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.repository.PendingTransactionContract;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -29,5 +30,10 @@ public class PendingTransactionRepositoryGateway implements PendingTransactionCo
     @Override
     public List<PendingTransaction> findByOperationTypeAndProcessedFalse(OperationType operationType) {
         return pendingTransactionRepository.findByOperationTypeAndProcessedFalse(operationType);
+    }
+
+    @Override
+    public Optional<PendingTransaction> findByOriginAccountIdAndTransactionStatus(UUID originAccountId, TransactionStatus status) {
+        return pendingTransactionRepository.findByOriginAccountIdAndTransactionStatus(originAccountId, status);
     }
 }
