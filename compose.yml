@@ -1,0 +1,46 @@
+services:
+  transactions-db:
+    image: postgres:16
+    container_name: transactions-db
+    environment:
+      POSTGRES_DB: transactions_db
+      POSTGRES_USER: ${DB_USERNAME:-bytebank}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bytebank}
+    ports:
+      - "5434:5432"
+    volumes:
+      - transactions_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-bytebank} -d transactions_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bytebank-net
+
+  bytebank-transactions:
+    build:
+      context: .
+    container_name: bytebank-transactions
+    depends_on:
+      transactions-db:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://transactions-db:5432/transactions_db
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-bytebank}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-bytebank}
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_DATA_REDIS_HOST: redis
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+    ports:
+      - "8083:8083"
+    networks:
+      - bytebank-net
+
+networks:
+  bytebank-net:
+    external: true
+
+volumes:
+  transactions_data:

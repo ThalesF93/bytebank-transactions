@@ -1,23 +1,26 @@
 package br.com.bytebank.transactions.service;
 
 import br.com.bytebank.transactions.TestBuilders;
-import br.com.bytebank.transactions.api.dtos.client.responses.AccountResponseDTO;
-import br.com.bytebank.transactions.api.dtos.requests.DepositRequestDTO;
-import br.com.bytebank.transactions.api.dtos.requests.TransferenceRequestDTO;
-import br.com.bytebank.transactions.api.dtos.requests.WithdrawRequestDTO;
-import br.com.bytebank.transactions.api.dtos.responses.BankStatementResponseDTO;
-import br.com.bytebank.transactions.api.dtos.responses.DepositResponseDTO;
-import br.com.bytebank.transactions.api.dtos.responses.TransactionResponseDTO;
-import br.com.bytebank.transactions.api.dtos.responses.WithdrawResponseDTO;
-import br.com.bytebank.transactions.application.impl.TransactionServiceImpl;
+import br.com.bytebank.transactions.application.usecase.DepositUseCase;
+import br.com.bytebank.transactions.application.usecase.TransferenceUseCase;
+import br.com.bytebank.transactions.application.usecase.WithdrawUseCase;
+import br.com.bytebank.transactions.infrastructure.dtos.client.responses.AccountResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.TransferenceRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.BankStatementResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.DepositResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.TransactionResponseDTO;
+import br.com.bytebank.transactions.infrastructure.dtos.responses.WithdrawResponseDTO;
+import br.com.bytebank.transactions.application.service.TransactionServiceImpl;
 import br.com.bytebank.transactions.domain.entity.PendingTransaction;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
-import br.com.bytebank.transactions.domain.exception.customized_exceptions.*;
+import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.*;
 import br.com.bytebank.transactions.infrastructure.feignclient.AccountClient;
-import br.com.bytebank.transactions.infrastructure.messaging.TransactionEventPublisher;
-import br.com.bytebank.transactions.infrastructure.repositories.PendingTransactionRepository;
-import br.com.bytebank.transactions.infrastructure.repositories.TransactionRepository;
+import br.com.bytebank.transactions.infrastructure.messaging.rabbitmq.TransactionEventPublisher;
+import br.com.bytebank.transactions.infrastructure.database.PendingTransactionRepository;
+import br.com.bytebank.transactions.infrastructure.database.TransactionRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.FeignException;
@@ -69,6 +72,15 @@ public class TransactionServiceTest {
     @Mock
     ObjectMapper objectMapper;
 
+    @Mock
+    DepositUseCase depositUseCase;
+
+    @Mock
+    WithdrawUseCase withdrawUseCase;
+
+    @Mock
+    TransferenceUseCase transferenceUseCase;
+
     @BeforeEach
     void setUp() {
 
@@ -91,7 +103,7 @@ public class TransactionServiceTest {
                 .debit(any(WithdrawRequestDTO.class));
 
         WithdrawResponseDTO result =
-                transactionService.withdraw(idempotencyKey, dto);
+                withdrawUseCase.execute(idempotencyKey, dto);
 
         verify(transactionRepository, times(2)).save(any(Transaction.class));
         verify(accountClient).debit(any(WithdrawRequestDTO.class));
@@ -119,7 +131,7 @@ public class TransactionServiceTest {
                 .thenAnswer(inv -> inv.getArgument(0));
 
         WithdrawResponseDTO result =
-                transactionService.withdraw(idempotencyKey, dto);
+                withdrawUseCase.execute(idempotencyKey, dto);
 
         verify(transactionRepository, times(1))
                 .save(any(Transaction.class));
@@ -143,7 +155,7 @@ public class TransactionServiceTest {
                 new WithdrawRequestDTO(UUID.randomUUID(), BigDecimal.ZERO);
 
         assertThatExceptionOfType(InvalidAmountException.class)
-                .isThrownBy(() -> transactionService.withdraw(idempotencyKey, dto))
+                .isThrownBy(() -> withdrawUseCase.execute(idempotencyKey, dto))
                 .withMessage("Amount must be greater than zero");
 
         verify(transactionRepository, never()).save(any());
@@ -172,7 +184,7 @@ public class TransactionServiceTest {
         when(objectMapper.writeValueAsString(any()))
                 .thenReturn("{\"amount\":10}");
 
-        DepositResponseDTO result = transactionService.deposit(idempotencyKey, dto);
+        DepositResponseDTO result = depositUseCase.execute(idempotencyKey, dto);
 
         verify(transactionRepository, times(2)).save(any(Transaction.class));
         verify(accountClient, times(1)).credit(any());
@@ -196,7 +208,7 @@ public class TransactionServiceTest {
         doThrow(Mockito.mock(FeignException.class))
                 .when(accountClient).credit(dto);
 
-        DepositResponseDTO result = transactionService.deposit(UUID.randomUUID(), dto);
+        DepositResponseDTO result = depositUseCase.execute(UUID.randomUUID(), dto);
 
         verify(transactionRepository).save(any(Transaction.class));
         verify(pendingRepository).save(any(PendingTransaction.class));
@@ -208,7 +220,7 @@ public class TransactionServiceTest {
         DepositRequestDTO dto = new DepositRequestDTO(UUID.randomUUID(), new BigDecimal("0"));
 
         assertThatExceptionOfType(InvalidAmountException.class)
-                .isThrownBy(() -> transactionService.deposit(UUID.randomUUID(), dto))
+                .isThrownBy(() -> depositUseCase.execute(UUID.randomUUID(), dto))
                 .withMessage("Amount must be greater than zero");
 
         verifyNoInteractions(transactionRepository, pendingRepository, accountClient);
@@ -321,7 +333,7 @@ public class TransactionServiceTest {
                 .thenAnswer(inv -> inv.getArgument(0));
 
         var result =
-                transactionService.transference(idempotencyKey, requestDTO);
+                transferenceUseCase.execute(idempotencyKey, requestDTO);
 
         verify(transactionRepository, times(2))
                 .save(any(Transaction.class));
@@ -349,7 +361,7 @@ public class TransactionServiceTest {
 
         assertThatExceptionOfType(SameAccountException.class)
                 .isThrownBy(() ->
-                        transactionService.transference(idempotencyKey, requestDTO))
+                        transferenceUseCase.execute(idempotencyKey, requestDTO))
                 .withMessage("The accounts must be different");
 
         verifyNoInteractions(transactionRepository);
@@ -378,7 +390,7 @@ public class TransactionServiceTest {
 
         assertThatExceptionOfType(AccountNotFoundException.class)
                 .isThrownBy(() ->
-                        transactionService.transference(idempotencyKey, requestDTO))
+                        transferenceUseCase.execute(idempotencyKey, requestDTO))
                 .withMessage(String.format("Account with id %s not found", idOriginAccount));
 
         verify(accountClient).findAccount(idOriginAccount);
@@ -416,7 +428,7 @@ public class TransactionServiceTest {
 
         assertThatExceptionOfType(AccountNotFoundException.class)
                 .isThrownBy(() ->
-                        transactionService.transference(idempotencyKey, requestDTO));
+                        transferenceUseCase.execute(idempotencyKey, requestDTO));
 
         verify(accountClient).findAccount(idOriginAccount);
         verify(accountClient).findAccount(idTargetAccount);
@@ -455,7 +467,7 @@ public class TransactionServiceTest {
 
         assertThatExceptionOfType(InsufficientBalanceException.class)
                 .isThrownBy(() ->
-                        transactionService.transference(idempotencyKey, requestDTO))
+                        transferenceUseCase.execute(idempotencyKey, requestDTO))
                 .withMessage("Insufficient balance");
 
         verify(accountClient).findAccount(idOriginAccount);
@@ -500,7 +512,7 @@ public class TransactionServiceTest {
                 .when(accountClient).debit(any(WithdrawRequestDTO.class));
 
         TransactionResponseDTO response =
-                transactionService.transference(idempotencyKey, requestDTO);
+                transferenceUseCase.execute(idempotencyKey, requestDTO);
 
         assertThat(response.status()).isEqualTo(TransactionStatus.PENDING);
 

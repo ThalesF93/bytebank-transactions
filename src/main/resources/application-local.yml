@@ -11,6 +11,26 @@ spring:
       httpclient:
         hc5:
           enabled: true
+
+  Kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 2147483647
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        linger.ms: 5
+        batch.size: 32768
+        compression.type: snappy
+        spring.json.type.mapping: transaction-created:br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedEvent
+
+    listener:
+      ack-mode: manual_immediate
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -18,9 +38,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/transactions_db}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:supino2604}
+    url: ${DB_URL:jdbc:postgresql://localhost:5434/transactions_db}
+    username: ${DB_USERNAME:bytebank}
+    password: ${DB_PASSWORD:bytebank}
 
   data:
     redis:
