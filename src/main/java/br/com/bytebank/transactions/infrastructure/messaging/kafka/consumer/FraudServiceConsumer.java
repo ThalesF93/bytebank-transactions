@@ -19,7 +19,7 @@ public class FraudServiceConsumer {
 
     private final FraudCallBackUseCase fraudCallBackUseCase;
 
-    @KafkaListener(topics = "score.response", groupId = "fraud-group", containerFactory = "KafkaListenerContainerFactory")
+    @KafkaListener(topics = "score.response", groupId = "fraud-group", containerFactory = "kafkaListenerContainerFactory")
     public void consume(@Payload FraudScoreEvent event,
                         @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
                         @Header(KafkaHeaders.OFFSET) long offset,

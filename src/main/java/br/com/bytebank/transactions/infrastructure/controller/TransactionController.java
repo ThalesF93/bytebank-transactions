@@ -49,7 +49,7 @@ public class TransactionController implements TransactionControllerOpenApi {
 
         var deposit = depositUseCase.execute(idempotencyKey ,depositRequestDTO);
 
-        log.info("Deposit completed. accountID={}", depositRequestDTO.accountId());
+
         return ResponseEntity.status(HttpStatus.OK).body(deposit);
     }
 

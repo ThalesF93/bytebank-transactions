@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -30,6 +31,7 @@ public class WithdrawUseCaseImpl implements WithdrawUseCase {
     private final TransactionValidator validator;
 
     @Override
+    @Transactional
     public WithdrawResponseDTO execute(UUID idempotencyKey, WithdrawRequestDTO requestDTO) {
         validator.amountValidation(requestDTO.amount());
 
@@ -41,7 +43,7 @@ public class WithdrawUseCaseImpl implements WithdrawUseCase {
             return cacheValidator.fromIdempotencyCache(cacheKey, WithdrawResponseDTO.class);
         }
 
-        Transaction transaction = transactionFactory.createTransactionEntity(requestDTO, OperationType.WITHDRAW, TransactionStatus.PENDING);
+        Transaction transaction = transactionFactory.createTransactionEntity(requestDTO, OperationType.WITHDRAW, TransactionStatus.PENDING_CONFIRMATION);
         transactionRepository.save(transaction);
 
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));

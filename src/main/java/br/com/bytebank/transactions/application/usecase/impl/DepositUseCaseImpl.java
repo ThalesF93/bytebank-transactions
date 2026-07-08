@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -31,6 +32,7 @@ public class DepositUseCaseImpl implements DepositUseCase {
     private final TransactionValidator validator;
 
     @Override
+    @Transactional
     public DepositResponseDTO execute(UUID idempotencyKey, DepositRequestDTO requestDTO) {
         validator.amountValidation(requestDTO.amount());
 
@@ -42,7 +44,7 @@ public class DepositUseCaseImpl implements DepositUseCase {
             return cacheValidator.fromIdempotencyCache(cacheKey, DepositResponseDTO.class);
         }
 
-        Transaction transaction = transactionFactory.createTransactionEntity(requestDTO, OperationType.DEPOSIT, TransactionStatus.PENDING);
+        Transaction transaction = transactionFactory.createTransactionEntity(requestDTO, OperationType.DEPOSIT, TransactionStatus.PENDING_CONFIRMATION);
         transactionRepository.save(transaction);
 
         eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));

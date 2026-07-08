@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -31,6 +32,8 @@ public class TransferenceUseCaseImpl implements TransferenceUseCase {
     private final TransactionFactory transactionFactory;
     private final TransactionValidator validator;
 
+    @Transactional
+    @Override
     public TransactionResponseDTO execute(UUID idempotencyKey, TransferenceRequestDTO dto){
 
         String cacheKey = "idempotency:transference:" + idempotencyKey;
@@ -49,7 +52,7 @@ public class TransferenceUseCaseImpl implements TransferenceUseCase {
         originAccount = validator.getAccountForTransaction(dto.originAccountId());
         destinationAccount = validator.getAccountForTransaction(dto.destinationAccountId());
 
-        Transaction transaction = transactionFactory.createTransactionEntity(dto, OperationType.TRANSFER, TransactionStatus.PENDING);
+        Transaction transaction = transactionFactory.createTransactionEntity(dto, OperationType.TRANSFER, TransactionStatus.PENDING_CONFIRMATION);
         transaction.setTargetAccountId(dto.destinationAccountId());
         transactionRepository.save(transaction);
 
