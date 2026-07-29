@@ -14,6 +14,9 @@ public record CustomerClientResponseDTO(
         @Schema(description = "Customer`s Name")
         String name,
 
+        @Schema(description = "Customer's mobile phone")
+        String phone,
+
         @Schema(description = "Customer`s Email")
         String email
 ) implements Serializable {

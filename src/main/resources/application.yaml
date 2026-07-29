@@ -45,7 +45,7 @@ spring:
         linger.ms: 5
         batch.size: 32768
         compression.type: snappy
-        spring.json.type.mapping: transaction-created:br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedEvent
+        spring.json.type.mapping: transaction-created:br.com.bytebank.transactions.infrastructure.messaging.kafka.event.TransactionCreatedEvent,fraud-notification:br.com.bytebank.transactions.infrastructure.messaging.kafka.event.FraudNotificationEvent
 
     consumer:
         group-id: fraud-group

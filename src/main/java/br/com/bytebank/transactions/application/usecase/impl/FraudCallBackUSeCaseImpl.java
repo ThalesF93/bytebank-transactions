@@ -2,9 +2,11 @@ package br.com.bytebank.transactions.application.usecase.impl;
 
 import br.com.bytebank.transactions.application.factory.OperationExecutor;
 import br.com.bytebank.transactions.application.usecase.FraudCallBackUseCase;
+import br.com.bytebank.transactions.domain.contract.AccountClientContract;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.repository.TransactionRepositoryDomain;
+import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.FraudNotificationEvent;
 import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.FraudScoreEvent;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.InvalidFraudScoreException;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.OperationTypeNoneExistingException;
@@ -23,6 +25,7 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
     private final TransactionRepositoryDomain transactionRepositoryDomain;
     private final ApplicationEventPublisher eventPublisher;
     private final OperationExecutor executor;
+    private final AccountClientContract accountClient;
 
     @Override
     public void execute(FraudScoreEvent dto) {
@@ -55,7 +58,11 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
     private void executeMediumRiskOperation(Transaction transaction){
         transaction.setStatus(TransactionStatus.PENDING_CONFIRMATION);
         transactionRepositoryDomain.save(transaction);
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
+        var customer = accountClient.findCustomerByAccountId(transaction.getOriginAccountId());
+
+        eventPublisher.publishEvent(new FraudNotificationEvent(
+                transaction.getId(), customer.name(), customer.phone(), customer.email()
+        ));
         log.info("Transaction id={}, risk MEDIUM with type={}, succeeded", transaction.getId(), transaction.getType());
     }
 }
