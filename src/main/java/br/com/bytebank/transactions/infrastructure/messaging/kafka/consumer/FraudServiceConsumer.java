@@ -32,7 +32,9 @@ public class FraudServiceConsumer {
             ack.acknowledge();
             log.info("Operation persisted from Kafka event. transactionId={}", event.transactionId());
         } catch (Exception e) {
-            throw new KafkaProcessingException();
+            log.error("Failed to process fraud score event. transactionId={} error={}",
+                    event.transactionId(), e.getMessage(), e);
+            ack.acknowledge();
         }
     }
 }
