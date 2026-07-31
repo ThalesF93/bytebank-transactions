@@ -12,7 +12,7 @@ import java.util.UUID;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/user-confirmation")
+@RequestMapping("/api/v1/transactions/user-confirmation")
 public class UserConfirmationController {
 
     private final UserConfirmationUseCase userConfirmationUseCase;

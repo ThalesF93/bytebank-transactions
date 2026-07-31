@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +29,7 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
     private final AccountClientContract accountClient;
 
     @Override
+    @Transactional
     public void execute(FraudScoreEvent dto) {
         var transaction = transactionRepositoryDomain.findById(dto.transactionId()).orElseThrow(
                 () -> new TransactionException(dto.transactionId()));
@@ -56,10 +58,18 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
     }
 
     private void executeMediumRiskOperation(Transaction transaction){
+        transactionRepositoryDomain
+                .findByOriginAccountIdAndStatus(transaction.getOriginAccountId(), TransactionStatus.PENDING_CONFIRMATION)
+                .ifPresent(previous -> {
+                    previous.setStatus(TransactionStatus.BLOCKED);
+                    transactionRepositoryDomain.save(previous);
+                });
+
         transaction.setStatus(TransactionStatus.PENDING_CONFIRMATION);
         transactionRepositoryDomain.save(transaction);
         var customer = accountClient.findCustomerByAccountId(transaction.getOriginAccountId());
-
+        log.info("Customer data: id={} name={} phone={} email={}",
+                customer.id(), customer.name(), customer.phone(), customer.email());
         eventPublisher.publishEvent(new FraudNotificationEvent(
                 transaction.getId(), customer.name(), customer.phone(), customer.email()
         ));

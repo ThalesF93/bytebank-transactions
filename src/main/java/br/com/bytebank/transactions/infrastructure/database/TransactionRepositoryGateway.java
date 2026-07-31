@@ -1,6 +1,7 @@
 package br.com.bytebank.transactions.infrastructure.database;
 
 import br.com.bytebank.transactions.domain.entity.Transaction;
+import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.repository.TransactionRepositoryDomain;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -28,5 +29,10 @@ public class TransactionRepositoryGateway implements TransactionRepositoryDomain
     @Override
     public List<Transaction> findByOriginAccountIdOrTargetAccountIdOrderByDateTimeDesc(UUID originAccountId, UUID targetAccountId) {
         return transactionRepository.findByOriginAccountIdOrTargetAccountIdOrderByDateTimeDesc(originAccountId, targetAccountId);
+    }
+
+    @Override
+    public Optional<Transaction> findByOriginAccountIdAndStatus(UUID originAccountId, TransactionStatus status) {
+        return transactionRepository.findByOriginAccountIdAndStatus(originAccountId, status);
     }
 }

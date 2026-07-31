@@ -58,7 +58,6 @@ public class OperationExecutor {
         log.info("Blocking transaction. ID={}", transaction.getId());
         transaction.setStatus(TransactionStatus.BLOCKED);
         transactionRepository.save(transaction);
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
     }
 
 
