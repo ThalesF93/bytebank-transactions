@@ -28,6 +28,7 @@ public class OperationExecutor {
     private final TransactionFactory factory;
 
     public void executeDeposit(Transaction transaction ){
+        log.info("Attempting credit. accountId={} amount={}", transaction.getOriginAccountId(), transaction.getAmount());
         if (isAccountServiceUnavailable(() -> accountClient.credit(transaction.getOriginAccountId(), transaction.getAmount()))) {
             markAsPending(transaction, FailureReason.DEBIT_FAILED);
         }
@@ -40,6 +41,7 @@ public class OperationExecutor {
     }
 
     public void executeWithdraw(Transaction transaction ){
+        log.info("Attempting debit. accountId={} amount={}", transaction.getOriginAccountId(), transaction.getAmount());
         if (isAccountServiceUnavailable(() -> accountClient.debit(transaction.getOriginAccountId(), transaction.getAmount()))) {
             markAsPending(transaction, FailureReason.DEBIT_FAILED);
         }
@@ -53,14 +55,14 @@ public class OperationExecutor {
     }
 
     public void blockTransaction(Transaction transaction){
+        log.info("Blocking transaction. ID={}", transaction.getId());
         transaction.setStatus(TransactionStatus.BLOCKED);
         transactionRepository.save(transaction);
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
     }
 
 
     public void executeTransfer(Transaction transaction) {
-
+        log.info("Attempting transfer. accountId={} amount={}", transaction.getOriginAccountId(), transaction.getAmount());
         if (isAccountServiceUnavailable(() -> accountClient.debit(transaction.getOriginAccountId(), transaction.getAmount()))) {
             markAsPending(transaction, FailureReason.DEBIT_FAILED);
             return;

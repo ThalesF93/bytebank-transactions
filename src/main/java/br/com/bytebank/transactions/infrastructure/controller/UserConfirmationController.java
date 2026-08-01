@@ -1,6 +1,7 @@
 package br.com.bytebank.transactions.infrastructure.controller;
 
 import br.com.bytebank.transactions.application.usecase.UserConfirmationUseCase;
+import br.com.bytebank.transactions.infrastructure.openapi.UserConfirmationControllerOpenApi;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,12 +13,13 @@ import java.util.UUID;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("/user-confirmation")
-public class UserConfirmationController {
+@RequestMapping("/api/v1/transactions/user-confirmation")
+public class UserConfirmationController implements UserConfirmationControllerOpenApi {
 
     private final UserConfirmationUseCase userConfirmationUseCase;
 
     @PostMapping
+    @Override
     public ResponseEntity<Void> receiveUserConfirmation(@NotBlank @RequestHeader("X-User-Id") String customerId,
                                                         @NotBlank @RequestBody String answer){
 

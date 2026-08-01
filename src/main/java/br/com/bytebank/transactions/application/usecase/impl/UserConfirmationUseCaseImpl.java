@@ -5,6 +5,7 @@ import br.com.bytebank.transactions.application.usecase.UserConfirmationUseCase;
 import br.com.bytebank.transactions.domain.contract.AccountClientContract;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.repository.PendingTransactionContract;
+import br.com.bytebank.transactions.domain.repository.TransactionRepositoryDomain;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.OperationTypeNoneExistingException;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.ResourceNotFoundException;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.TransactionException;
@@ -21,29 +22,27 @@ public class UserConfirmationUseCaseImpl implements UserConfirmationUseCase {
 
     private final AccountClientContract accountClient;
     private final OperationExecutor executor;
-    private final PendingTransactionContract pendingTransactionContract;
+    private final TransactionRepositoryDomain transactionRepository;
 
     @Override
     public void execute(UUID uuid, String answer) {
         log.info("Starting operation after received answer from User");
         var account = accountClient.findAccountByCustomerId(uuid);
 
-        var pendingTransaction = pendingTransactionContract.findByOriginAccountIdAndTransactionStatus(
-                        account.accountId(), TransactionStatus.PENDING_CONFIRMATION)
+        var transaction = transactionRepository
+                .findByOriginAccountIdAndStatus(account.accountId(), TransactionStatus.PENDING_CONFIRMATION)
                 .orElseThrow(() -> new TransactionException(account.accountId()));
-
-        var transactionEntity = pendingTransaction.getSourceTransaction();
 
         String answerLowerCase = answer.toLowerCase();
 
         switch (answerLowerCase) {
-            case "nao", "não" -> executor.blockTransaction(transactionEntity);
+            case "nao", "não" -> executor.blockTransaction(transaction);
             case "sim" -> {
-                switch (transactionEntity.getType()) {
-                    case DEPOSIT -> executor.executeDeposit(transactionEntity);
-                    case WITHDRAW -> executor.executeWithdraw(transactionEntity);
-                    case TRANSFER -> executor.executeTransfer(transactionEntity);
-                    default -> throw new OperationTypeNoneExistingException(transactionEntity.getType());
+                switch (transaction.getType()) {
+                    case DEPOSIT -> executor.executeDeposit(transaction);
+                    case WITHDRAW -> executor.executeWithdraw(transaction);
+                    case TRANSFER -> executor.executeTransfer(transaction);
+                    default -> throw new OperationTypeNoneExistingException(transaction.getType());
                 }
             }
             default -> throw new ResourceNotFoundException("Invalid Answer to proceed any operations");

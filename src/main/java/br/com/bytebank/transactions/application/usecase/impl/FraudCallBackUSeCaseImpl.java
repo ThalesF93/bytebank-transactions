@@ -2,9 +2,11 @@ package br.com.bytebank.transactions.application.usecase.impl;
 
 import br.com.bytebank.transactions.application.factory.OperationExecutor;
 import br.com.bytebank.transactions.application.usecase.FraudCallBackUseCase;
+import br.com.bytebank.transactions.domain.contract.AccountClientContract;
 import br.com.bytebank.transactions.domain.entity.Transaction;
 import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 import br.com.bytebank.transactions.domain.repository.TransactionRepositoryDomain;
+import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.FraudNotificationEvent;
 import br.com.bytebank.transactions.infrastructure.messaging.kafka.event.FraudScoreEvent;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.InvalidFraudScoreException;
 import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.OperationTypeNoneExistingException;
@@ -14,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +26,10 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
     private final TransactionRepositoryDomain transactionRepositoryDomain;
     private final ApplicationEventPublisher eventPublisher;
     private final OperationExecutor executor;
+    private final AccountClientContract accountClient;
 
     @Override
+    @Transactional
     public void execute(FraudScoreEvent dto) {
         var transaction = transactionRepositoryDomain.findById(dto.transactionId()).orElseThrow(
                 () -> new TransactionException(dto.transactionId()));
@@ -53,9 +58,21 @@ public class FraudCallBackUSeCaseImpl implements FraudCallBackUseCase {
     }
 
     private void executeMediumRiskOperation(Transaction transaction){
+        transactionRepositoryDomain
+                .findByOriginAccountIdAndStatus(transaction.getOriginAccountId(), TransactionStatus.PENDING_CONFIRMATION)
+                .ifPresent(previous -> {
+                    previous.setStatus(TransactionStatus.BLOCKED);
+                    transactionRepositoryDomain.save(previous);
+                });
+
         transaction.setStatus(TransactionStatus.PENDING_CONFIRMATION);
         transactionRepositoryDomain.save(transaction);
-        eventPublisher.publishEvent(new TransactionCreatedDomainEvent(transaction));
+        var customer = accountClient.findCustomerByAccountId(transaction.getOriginAccountId());
+        log.info("Customer data: id={} name={} phone={} email={}",
+                customer.id(), customer.name(), customer.phone(), customer.email());
+        eventPublisher.publishEvent(new FraudNotificationEvent(
+                transaction.getId(), customer.name(), customer.phone(), customer.email()
+        ));
         log.info("Transaction id={}, risk MEDIUM with type={}, succeeded", transaction.getId(), transaction.getType());
     }
 }

@@ -1,6 +1,7 @@
 package br.com.bytebank.transactions.domain.repository;
 
 import br.com.bytebank.transactions.domain.entity.Transaction;
+import br.com.bytebank.transactions.domain.enums.TransactionStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,4 +18,5 @@ public interface TransactionRepositoryDomain {
             UUID targetAccountId
     );
 
+    Optional<Transaction> findByOriginAccountIdAndStatus(UUID originAccountId, TransactionStatus status);
 }

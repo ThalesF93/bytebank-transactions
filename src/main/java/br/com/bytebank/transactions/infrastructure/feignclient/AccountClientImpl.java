@@ -5,6 +5,8 @@ import br.com.bytebank.transactions.infrastructure.dtos.client.responses.Account
 import br.com.bytebank.transactions.infrastructure.dtos.client.responses.CustomerClientResponseDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.requests.DepositRequestDTO;
 import br.com.bytebank.transactions.infrastructure.dtos.requests.WithdrawRequestDTO;
+import br.com.bytebank.transactions.infrastructure.exception.customized_exceptions.AccountServiceUnavailableException;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -20,13 +22,24 @@ public class AccountClientImpl implements AccountClientContract {
     @Override
     public void debit(UUID accountId, BigDecimal amount) {
         WithdrawRequestDTO dto = new WithdrawRequestDTO(accountId, amount);
-        accountClient.debit(dto);
+        try {
+            accountClient.debit(dto);
+        } catch (FeignException e) {
+            System.out.println(e.getMessage());
+            throw new AccountServiceUnavailableException();
+        }
     }
 
     @Override
     public void credit(UUID accountId, BigDecimal amount) {
         DepositRequestDTO dto = new DepositRequestDTO(accountId, amount);
-        accountClient.credit(dto);
+        try {
+            accountClient.credit(dto);
+        } catch (FeignException e) {
+            System.out.println(e.getMessage());
+            throw new AccountServiceUnavailableException();
+
+        }
     }
 
     @Override
